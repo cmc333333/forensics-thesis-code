@@ -29,10 +29,7 @@ Definition gunzip_a := (fun (input: File) =>
           input.(deleted) 
           (fun (offset: Z) => find offset gunzipped_23)
           (* Fields not used; ignore them *)
-          None
-          None
-          None
-          None)).
+          None None None None)).
 
 Lemma flip_not_equal: forall (x y:Exc File),
   x <> y -> y <> x.
