@@ -2,6 +2,8 @@ Require Import Coq.ZArith.ZArith.
 Require Import FSets.FMaps.
 Require Import FSets.FMapAVL.
 
+Require Import Fetch.
+
 Open Local Scope Z.
 
 (* instantiation of the AVL module that implements the finite map interface *)
@@ -24,17 +26,20 @@ Notation "[ ]" := (MZ.empty Z).
 Notation "[ p1 , .. , pn ]" := (update p1 .. (update pn []) .. ).
 
 Definition ByteString := list Z.
-Definition ByteData := Z -> Exc Z.
+Definition ByteData := Z -> (@Fetch Z).
 Definition Disk := ByteData.
 
 Bind Scope ByteData_scope with Disk.
 
 Definition Disk_of_Map_Z_Z (map: Map_Z_Z) : Disk :=
-  fun (key: Z) => find key map.
+  fun (key: Z) => match (find key map) with
+  | error => MissingAt key
+  | value v => Found v
+  end.
 
 Coercion Disk_of_Map_Z_Z : Map_Z_Z >-> Disk.
 
 (* Change the "zero" index; i.e. "shift" the bytes *)
 Definition shift (bytes: ByteData) (shiftAmount index: Z) 
-  : Exc Z :=
+  : Fetch :=
   bytes (shiftAmount + index).

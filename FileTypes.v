@@ -1,25 +1,26 @@
 Require Import Coq.ZArith.ZArith.
 
+Require Import Fetch.
 Require Import File.
 
 Open Local Scope Z.
 
 Definition isJpeg (file: File) :=
-     file @[  0 ] = value 255
-  /\ file @[  1 ] = value 216 
-  /\ file @[ -2 ] = value 255
-  /\ file @[ -1 ] = value 217.
+     file @[  0 ] = Found 255
+  /\ file @[  1 ] = Found 216 
+  /\ file @[ -2 ] = Found 255
+  /\ file @[ -1 ] = Found 217.
 
 Definition isGzip (file: File) :=
-     file @[  0 ] = value 31
-  /\ file @[  1 ] = value 139 
-  /\ file @[  2 ] = value 8.
+     file @[  0 ] = Found 31
+  /\ file @[  1 ] = Found 139 
+  /\ file @[  2 ] = Found 8.
 
 Definition isElf (file: File) :=
-     file @[  0 ] = value 127
-  /\ file @[  1 ] = value 69 
-  /\ file @[  2 ] = value 76
-  /\ file @[  3 ] = value 70.
+     file @[  0 ] = Found 127
+  /\ file @[  1 ] = Found 69 
+  /\ file @[  2 ] = Found 76
+  /\ file @[  3 ] = Found 70.
 
 
 Lemma jpeg_is_not_gzip : forall (file: File),

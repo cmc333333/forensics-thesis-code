@@ -2,6 +2,7 @@ Require Import Coq.Lists.List.
 Require Import Coq.ZArith.ZArith.
 
 Require Import ByteData.
+Require Import Fetch.
 Require Import File.
 Require Import FileNames.
 Require Import Util.
@@ -23,19 +24,19 @@ Fixpoint fromOctalAscii (bytes: list Z) : Exc Z :=
   end.
 
 Definition parseFirstFileNameAndFile (tar: File) 
-  : Exc (ByteString*File) :=
+  : @Fetch (ByteString*File) :=
   let firstHundredBytes := map tar.(data) (0 upto 100) in
-  let fileName := flatten (takeWhile 
-    (fun (byte: Exc Z) => match byte with
-      | error =>   false (* stop *)
-      | value 0 => false (* stop *)
-      | value _ => true  (* continue *)
+  let fileName := fetch_flatten (takeWhile 
+    (fun (byte: @Fetch Z) => match byte with
+      | Found 0 => false (* stop *)
+      | Found _ => true  (* continue *)
+      | _ => false       (* stop *)
     end) firstHundredBytes) in
   (* File Size is encoded in octal, represented as ASCII characters. It begins
   at offset 124 and runs for 11 characters *)
   (seq_list tar.(data) 124 11) 
-    _flatmap_ (fun fileSizeList =>
-  (fromOctalAscii fileSizeList) _map_ (fun fileSize =>
+    _fflatmap_ (fun fileSizeList =>
+  match (fromOctalAscii fileSizeList) _map_ (fun fileSize =>
     (fileName, 
       (mkFile None (* no id in child files*)
               fileSize
@@ -48,16 +49,18 @@ Definition parseFirstFileNameAndFile (tar: File)
               tar.(lastModification)
               tar.(lastCreated)
               tar.(lastDeleted)
-    )) 
-  )).
+    ))) with
+    | error => ErrorString "Invalid Tar File Size"
+    | value v => Found v
+    end
+  ).
 
 Definition recFileNameFrom (nextCall: File -> list ByteString) 
   (remaining: File) : list ByteString :=
   if (remaining.(fileSize) <=? 0)
     then nil
   else match (parseFirstFileNameAndFile remaining) with
-    | error => nil
-    | value (fileName, file) =>
+    | Found (fileName, file) =>
         (* Strip the first file out of the tar *)
         (* Round to the nearest 512 *)
         let firstFileSize := (
@@ -76,6 +79,7 @@ Definition recFileNameFrom (nextCall: File -> list ByteString)
                   remaining.(lastDeleted)
           ) in
         fileName :: (nextCall trimmedTar)
+    | _ => nil
     end.
 
 Definition parseFileNames (file: File): list (list Z) :=

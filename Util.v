@@ -3,6 +3,7 @@ Require Import Coq.ZArith.ZArith.
 Require Export List.
 
 Require Import ByteData.
+Require Import Fetch.
 
 Open Local Scope Z.
 
@@ -57,16 +58,16 @@ Fixpoint flatten {A} (lst: list (Exc A)): list A :=
 
 (* from a Disk, extract the list of elements
   [ disk start; disk (start + 1); ... ; disk (start + length - 1) ] *)
-Definition seq_list (disk: Disk) (start length: Z): Exc (list Z) :=
+Definition seq_list (disk: Disk) (start length: Z): @Fetch (list Z) :=
   match length with
-    | Z0 => value nil
+    | Z0 => Found nil
     | Zpos l => 
       (Pos.peano_rec
-        (fun _ => Z -> Exc (list Z))
-        (fun (start': Z) => (disk start') _map_ (fun nextEl => nextEl :: nil))
-        (fun _ (seq_list_aux_pred_l: Z -> Exc (list Z)) (start': Z) => 
-          (disk start') _flatmap_ (fun nextEl =>
-            (seq_list_aux_pred_l (Z.succ start')) _map_ (fun tail =>
+        (fun _ => Z -> @Fetch (list Z))
+        (fun (start': Z) => (disk start') _fmap_ (fun nextEl => nextEl :: nil))
+        (fun _ (seq_list_aux_pred_l: Z -> @Fetch (list Z)) (start': Z) => 
+          (disk start') _fflatmap_ (fun nextEl =>
+            (seq_list_aux_pred_l (Z.succ start')) _fmap_ (fun tail =>
               nextEl :: tail
             )
           )
@@ -74,7 +75,7 @@ Definition seq_list (disk: Disk) (start length: Z): Exc (list Z) :=
       )
       l
       start
-    | Zneg _ => error
+    | Zneg _ => MissingAt length (* Should never be reached *)
   end.
 
 (* little endian unsigned *)
@@ -84,5 +85,5 @@ match l with
   | a :: l' => (a + (256 * lendu l'))
 end.   
 
-Definition seq_lendu (disk: Disk) (offset: Z) (length: Z): Exc Z :=
-  (seq_list disk offset length) _map_ (fun tail => lendu tail).
+Definition seq_lendu (disk: Disk) (offset: Z) (length: Z): @Fetch Z :=
+  (seq_list disk offset length) _fmap_ (fun tail => lendu tail).

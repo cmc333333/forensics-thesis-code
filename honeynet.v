@@ -9,6 +9,7 @@ Require Import Coq.ZArith.ZArith.
 
 Require Import ByteData.
 Require Import Ext2.
+Require Import Fetch.
 Require Import File.
 Require Import FileNames.
 Require Import FileSystems.
@@ -24,81 +25,97 @@ Open Local Scope Z.
 Definition honeynet_image_a : Disk := honeynet_map.
 (* All gunzip operations return the file mentioned *)
 Definition gunzip_a := (fun (input: File) => 
+  let asDisk := Disk_of_Map_Z_Z gunzipped_23 in
   (mkFile None (* no need for an id *)
           1454080 (* uncompressed file size *)
           input.(deleted) 
-          (fun (offset: Z) => find offset gunzipped_23)
+          asDisk
           (* Fields not used; ignore them *)
           None None None None)).
 
-Lemma flip_not_equal: forall (x y:Exc File),
+Lemma flip_not_equal: forall (x y:@Fetch File),
   x <> y -> y <> x.
 Proof.
   auto.
 Qed.
 
-Definition parseFileData (disk: Disk) (inodeIndex fileIndex: Z) : Exc Z :=
+Definition parseFileData (disk: Disk) (inodeIndex fileIndex: Z) : @Fetch Z :=
   (* Proceed as in parseFileFromInode *)
-  (findAndParseSuperBlock disk) _flatmap_ (fun superblock =>
+  (findAndParseSuperBlock disk) _fflatmap_ (fun superblock =>
   let groupId := ((inodeIndex - 1) (* One-indexed *)
                   / superblock.(inodesPerGroup)) in
   let inodeIndexInGroup :=
     (inodeIndex - 1) mod superblock.(inodesPerGroup) in
   (findAndParseGroupDescriptor disk superblock groupId) 
-    _flatmap_ (fun groupdesc =>
+    _fflatmap_ (fun groupdesc =>
   (findAndParseInode disk superblock groupdesc inodeIndex)
-    _flatmap_ (fun inode =>
-  (parseDeleted disk superblock groupdesc inodeIndex) _flatmap_ (fun deleted =>
+    _fflatmap_ (fun inode =>
+  (parseDeleted disk superblock groupdesc inodeIndex) _fflatmap_ (fun deleted =>
       (fetchInodeByte disk superblock inode fileIndex)
   )))).
 
 (* Helper definitions which allow us to pull just one component from a file *)
-Definition parseFileDeleted (disk: Disk) (inodeIndex: Z) : Exc bool :=
+Definition parseFileDeleted (disk: Disk) (inodeIndex: Z) : @Fetch bool :=
   (* Proceed as in parseFileFromInode *)
-  (findAndParseSuperBlock disk) _flatmap_ (fun superblock =>
+  (findAndParseSuperBlock disk) _fflatmap_ (fun superblock =>
   (* One-indexed *)
   let groupId := ((inodeIndex - 1) / superblock.(inodesPerGroup)) in
   let inodeIndexInGroup := (inodeIndex - 1) mod superblock.(inodesPerGroup) in
-  (findAndParseGroupDescriptor disk superblock groupId) _flatmap_ (fun groupdesc =>
-  (findAndParseInode disk superblock groupdesc inodeIndex) _flatmap_ (fun inode =>
+  (findAndParseGroupDescriptor disk superblock groupId) _fflatmap_ (fun groupdesc =>
+  (findAndParseInode disk superblock groupdesc inodeIndex) _fflatmap_ (fun inode =>
   (parseDeleted disk superblock groupdesc inodeIndex)
   ))).
 
 Lemma deleted_means_deleted : forall (disk:Disk) (inodeIndex: Z) (del: bool), 
-  parseFileDeleted disk inodeIndex = value del
-  -> (findAndParseFile disk inodeIndex) _map_ (fun f => f.(deleted)) = value del.
+  parseFileDeleted disk inodeIndex = Found del
+  -> (findAndParseFile disk inodeIndex) _fmap_ (fun f => f.(deleted)) = Found del.
 Proof.
   intros disk inodeIndex del.
   unfold parseFileDeleted.
   unfold findAndParseFile.
-  destruct (findAndParseSuperBlock disk) ; [|simpl; auto].
+  destruct (findAndParseSuperBlock disk) ; [|simpl; auto |simpl; auto].
   simpl.
   destruct (findAndParseGroupDescriptor disk s 
-              ((inodeIndex - 1) / inodesPerGroup s)) ; [|simpl; auto].
+              ((inodeIndex - 1) / inodesPerGroup s)) 
+              ; [|simpl; auto |simpl; auto].
   simpl.
-  destruct (findAndParseInode disk s g inodeIndex); [|simpl; auto]. simpl.
-  destruct (parseDeleted disk s g inodeIndex); [|simpl; auto]. simpl.
+  destruct (findAndParseInode disk s g inodeIndex); [|simpl; auto |simpl; auto]. 
+    simpl.
+  destruct (parseDeleted disk s g inodeIndex); [|simpl; auto |simpl; auto].
+    simpl.
   intros H. apply H.
 Qed.
 
 Lemma deleted_means_value: 
   forall (disk:Disk) (inodeIndex: Z), 
-    parseFileDeleted disk inodeIndex <> error 
-    -> findAndParseFile disk inodeIndex <> error.
+    (exists (b:bool), parseFileDeleted disk inodeIndex = Found b)
+    -> (exists (f:File), findAndParseFile disk inodeIndex = Found f).
 Proof.
   intros disk inodeIndex.
   unfold parseFileDeleted.
   unfold findAndParseFile.
-  destruct (findAndParseSuperBlock disk) ; [|simpl; auto].
+  destruct (findAndParseSuperBlock disk); [
+    | simpl; intros assump; inversion assump; discriminate H
+    | simpl; intros assump; inversion assump; discriminate H].
   simpl.
   destruct (findAndParseGroupDescriptor disk s 
-              ((inodeIndex - 1) / inodesPerGroup s)); 
-    [|simpl; auto]. simpl.
-  destruct (findAndParseInode disk s g inodeIndex); 
-    [|simpl; auto]. simpl.
-  destruct (parseDeleted disk s g inodeIndex); [|simpl; auto]. 
-  simpl.
-  intros _. discriminate.
+              ((inodeIndex - 1) / inodesPerGroup s)); [
+    | simpl; intros assump; inversion assump; discriminate H
+    | simpl; intros assump; inversion assump; discriminate H]. simpl.
+  destruct (findAndParseInode disk s g inodeIndex); [
+    | simpl; intros assump; inversion assump; discriminate H
+    | simpl; intros assump; inversion assump; discriminate H]. simpl.
+  destruct (parseDeleted disk s g inodeIndex); [
+    | simpl; intros assump; inversion assump; discriminate H
+    | simpl; intros assump; inversion assump; discriminate H]. simpl.
+  intros _. exists (mkFile (value inodeIndex)
+                           (size i)
+                           b 
+                           (fetchInodeByte disk s i)
+                           (value (atime i))
+                           (value (mtime i))
+                           (value (ctime i))
+                           (value (dtime i))). auto.
 Qed.
 
 Ltac file_on_disk inodeIndex Heqe :=
@@ -107,13 +124,31 @@ Ltac file_on_disk inodeIndex Heqe :=
   simpl; repeat (split; [reflexivity| ]);
   intros; reflexivity.
 
-Ltac ext2_field_match disk inodeIndex field val Heqe :=
-  assert ((findAndParseFile disk inodeIndex) _flatmap_ 
-          (fun f => field f) = value val) as to_match;
+
+
+Definition found_eq {X:Type} : forall (x y:X), Found x = Found y -> x = y.
+  Proof.
+  intros. injection H. auto.
+Qed.
+
+Ltac ext2_field_match disk inodeIndex field val T Heqe :=
+  assert ((findAndParseFile disk inodeIndex) _fmap_ 
+          (fun f => field f) = @Found T val) as to_match;
     [vm_compute; reflexivity|];
+  apply found_eq;
   rewrite <- to_match; rewrite <- Heqe; vm_compute; reflexivity.
 
-
+Lemma verify_ext2_event1 (disk:Disk) (inodeIndex:Z): 
+  (exists (f:File), findAndParseFile disk inodeIndex = Found f)
+  -> (forall (z:Z), MissingAt z <> findAndParseFile disk inodeIndex)
+      /\ (forall (s:String.string), ErrorString s <> findAndParseFile disk inodeIndex).
+Proof.
+  intros H.
+  destruct (findAndParseFile disk inodeIndex).
+  split; [discriminate | discriminate].
+  split; [inversion H; inversion H0 | discriminate].
+  split; [discriminate | inversion H; inversion H0].
+Qed.
 
 Ltac verify_ext2_event :=
   match goal with
@@ -121,15 +156,20 @@ Ltac verify_ext2_event :=
     isOnDisk file ?disk /\
     fileSystemId file = value ?fsId /\ ?field file = value ?val =>
     remember (findAndParseFile disk fsId) as e;
-    destruct e as [f Heqe | f Heqe]; [ | contradict Heqe; apply flip_not_equal; 
-      apply deleted_means_value; vm_compute; discriminate];
+    destruct e as [f Heqe | z Heqe | s Heqe]; [ 
+      | contradict Heqe; apply verify_ext2_event1;
+        apply deleted_means_value; vm_compute; eauto; reflexivity
+      | contradict Heqe; apply verify_ext2_event1;
+        apply deleted_means_value; vm_compute; eauto; reflexivity];
     exists f;
       split; [file_on_disk fsId Heqe|
       split; [
-        ext2_field_match disk fsId fileSystemId fsId Heqe |
-        ext2_field_match disk fsId field val
-        Heqe]]
+        ext2_field_match disk fsId fileSystemId (value fsId) (Exc Z) Heqe |
+        ext2_field_match disk fsId field (value val) (Exc Z) Heqe
+      ]]
   end.
+
+
 
 Lemma lee_honeynet_file:
   (Timeline.isSound (
@@ -189,20 +229,21 @@ Qed.
 
 Lemma byte_match: forall (disk: Disk) (inodeIndex fileIndex byte: Z),
   (fileIndex <? 0) = false ->
-  (parseFileData disk inodeIndex fileIndex) = value byte ->
-  (findAndParseFile disk inodeIndex) _flatmap_ (fun f =>
-    f @[ fileIndex ]) = value byte.
+  (parseFileData disk inodeIndex fileIndex) = Found byte ->
+  (findAndParseFile disk inodeIndex) _fflatmap_ (fun f =>
+    f @[ fileIndex ]) = Found byte.
 Proof.
   intros disk inodeIndex fileIndex byte.
   unfold parseFileData.
   unfold findAndParseFile.
-  destruct (findAndParseSuperBlock disk); [|simpl; auto].
+  destruct (findAndParseSuperBlock disk); [|simpl; auto|simpl; auto].
   simpl.
   destruct (findAndParseGroupDescriptor disk s ((inodeIndex - 1) /
-  inodesPerGroup s)) ; [|simpl; auto].
+  inodesPerGroup s)) ; [|simpl; auto|simpl; auto].
   simpl.
-  destruct (findAndParseInode disk s g inodeIndex); [|simpl; auto]. simpl.
-  destruct (parseDeleted disk s g inodeIndex); [|simpl; auto]. simpl.
+  destruct (findAndParseInode disk s g inodeIndex); [|simpl; auto|simpl; auto]. 
+  simpl.
+  destruct (parseDeleted disk s g inodeIndex); [|simpl; auto|simpl; auto]. simpl.
   intros gt0. unfold fetchByte. simpl.
   rewrite gt0. intros H. apply H.
 Qed.
@@ -216,40 +257,43 @@ Lemma borland_honeynet_file:
   /\ Tar.looksLikeRootkit (gunzip_a file).
 Proof.
   remember (findAndParseFile honeynet_image_a 23).
-  destruct e; [ | contradict Heqe; apply flip_not_equal; 
-      apply deleted_means_value; vm_compute; discriminate].
+  destruct f; [
+    | contradict Heqf; apply verify_ext2_event1; apply deleted_means_value;
+      vm_compute; eauto
+    | contradict Heqf; apply verify_ext2_event1; apply deleted_means_value;
+      vm_compute; eauto].
   exists f.
   split. 
     (* isOnDisk *)
-    file_on_disk 23 Heqe.
+    file_on_disk 23 Heqf.
 
   split.
     (* isDeleted *)
     unfold isDeleted.
-    assert ((findAndParseFile honeynet_image_a 23) _map_ 
-            (fun f => f.(deleted)) = value true).
+    assert ((findAndParseFile honeynet_image_a 23) _fmap_ 
+            (fun f => f.(deleted)) = Found true).
     vm_compute. reflexivity.
-    rewrite <- Heqe in H.
+    rewrite <- Heqf in H.
     simpl in H. injection H. auto.
 
   split.
     (* isGzip *)
     unfold isGzip. 
     split.
-      assert ((findAndParseFile honeynet_image_a 23) _flatmap_
-              (fun f => f @[ 0 ]) = value 31).
+      assert ((findAndParseFile honeynet_image_a 23) _fflatmap_
+              (fun f => f @[ 0 ]) = Found 31).
       vm_compute. reflexivity.
-      rewrite <- Heqe in H. simpl in H. apply H.
+      rewrite <- Heqf in H. simpl in H. apply H.
     split.
-      assert ((findAndParseFile honeynet_image_a 23) _flatmap_
-              (fun f => f @[ 1 ]) = value 139).
+      assert ((findAndParseFile honeynet_image_a 23) _fflatmap_
+              (fun f => f @[ 1 ]) = Found 139).
       vm_compute. reflexivity.
-      rewrite <- Heqe in H. simpl in H. apply H.
+      rewrite <- Heqf in H. simpl in H. apply H.
 
-      assert ((findAndParseFile honeynet_image_a 23) _flatmap_
-              (fun f => f @[ 2 ]) = value 8).
+      assert ((findAndParseFile honeynet_image_a 23) _fflatmap_
+              (fun f => f @[ 2 ]) = Found 8).
       vm_compute. reflexivity.
-      rewrite <- Heqe in H. simpl in H. apply H.
+      rewrite <- Heqf in H. simpl in H. apply H.
       
     unfold looksLikeRootkit.
     exists (ascii2Bytes "last/ssh"); exists (ascii2Bytes "last/top").

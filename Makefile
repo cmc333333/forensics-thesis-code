@@ -1,4 +1,5 @@
 default:
+	coqc Fetch
 	coqc ByteData
 	coqc Util
 	coqc File
