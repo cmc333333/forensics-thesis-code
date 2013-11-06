@@ -118,12 +118,17 @@ Proof.
                            (value (dtime i))). auto.
 Qed.
 
-Ltac file_on_disk inodeIndex Heqe :=
-  unfold isOnDisk; exists inodeIndex;
-  unfold fileEq; rewrite <- Heqe;
-  simpl; repeat (split; [reflexivity| ]);
-  intros; reflexivity.
-
+Lemma ext2_file_on_disk: 
+  forall (disk:Disk) (file:File) (inodeIndex:Z),
+  Found file = findAndParseFile disk inodeIndex
+  -> isOnDisk file disk.
+Proof.
+  intros.
+  unfold isOnDisk. exists inodeIndex.
+  unfold fileEq. rewrite <- H.
+  split; [reflexivity | split; [reflexivity|]].
+  intros. reflexivity.
+Qed.
 
 
 Definition found_eq {X:Type} : forall (x y:X), Found x = Found y -> x = y.
@@ -162,7 +167,7 @@ Ltac verify_ext2_event :=
       | contradict Heqe; apply verify_ext2_event1;
         apply deleted_means_value; vm_compute; eauto; reflexivity];
     exists f;
-      split; [file_on_disk fsId Heqe|
+      split; [apply ext2_file_on_disk in Heqe; apply Heqe |
       split; [
         ext2_field_match disk fsId fileSystemId (value fsId) (Exc Z) Heqe |
         ext2_field_match disk fsId field (value val) (Exc Z) Heqe
@@ -265,7 +270,7 @@ Proof.
   exists f.
   split. 
     (* isOnDisk *)
-    file_on_disk 23 Heqf.
+    apply ext2_file_on_disk in Heqf. apply Heqf.
 
   split.
     (* isDeleted *)
