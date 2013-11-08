@@ -70,7 +70,7 @@ Proof.
 Qed.
 
 
-Definition found_eq {X:Type} : forall (x y:X), Found x = Found y -> x = y.
+Lemma found_eq {X:Type} : forall (x y:X), Found x = Found y -> x = y.
   Proof.
   intros. injection H. auto.
 Qed.
@@ -80,6 +80,18 @@ Lemma ext2_field_match (X:Type):
     (Found file = findAndParseFile disk inodeIndex
     /\ (findAndParseFile disk inodeIndex) _fmap_ (fn) = @Found X x)
     -> fn file = x.
+Proof.
+  intros. destruct H.
+  apply found_eq.
+  rewrite <- H0. rewrite <- H. vm_compute. reflexivity.
+Qed.
+
+Lemma ext2_byte_match:
+  forall (byte offset inodeIndex: Z) (file:File) (disk:Disk),
+    (Found file = findAndParseFile disk inodeIndex
+    /\ (findAndParseFile disk inodeIndex) 
+        _fflatmap_ (fun f => data f offset) = Found byte)
+    -> data file offset = Found byte.
 Proof.
   intros. destruct H.
   apply found_eq.
@@ -218,30 +230,22 @@ Proof.
   split.
     (* isDeleted *)
     unfold isDeleted.
-    assert ((findAndParseFile honeynet_image_a 23) _fmap_ 
-            (fun f => f.(deleted)) = Found true).
-    vm_compute. reflexivity.
-    rewrite <- Heqf in H.
-    simpl in H. injection H. auto.
+    apply ext2_field_match with (disk := honeynet_image_a) (inodeIndex := 23).
+    split; [auto | vm_compute; reflexivity].
 
   split.
     (* isGzip *)
     unfold isGzip. 
+    unfold fetchByte. simpl.
     split.
-      assert ((findAndParseFile honeynet_image_a 23) _fflatmap_
-              (fun f => f @[ 0 ]) = Found 31).
-      vm_compute. reflexivity.
-      rewrite <- Heqf in H. simpl in H. apply H.
+      apply ext2_byte_match with (disk := honeynet_image_a) (inodeIndex := 23).
+      split ; [auto | vm_compute; reflexivity].
     split.
-      assert ((findAndParseFile honeynet_image_a 23) _fflatmap_
-              (fun f => f @[ 1 ]) = Found 139).
-      vm_compute. reflexivity.
-      rewrite <- Heqf in H. simpl in H. apply H.
+      apply ext2_byte_match with (disk := honeynet_image_a) (inodeIndex := 23).
+      split ; [auto | vm_compute; reflexivity].
 
-      assert ((findAndParseFile honeynet_image_a 23) _fflatmap_
-              (fun f => f @[ 2 ]) = Found 8).
-      vm_compute. reflexivity.
-      rewrite <- Heqf in H. simpl in H. apply H.
+      apply ext2_byte_match with (disk := honeynet_image_a) (inodeIndex := 23).
+      split ; [auto | vm_compute; reflexivity].
       
     unfold looksLikeRootkit.
     exists (ascii2Bytes "last/ssh"); exists (ascii2Bytes "last/top").
