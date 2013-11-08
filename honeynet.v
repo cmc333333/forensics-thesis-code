@@ -33,11 +33,24 @@ Definition gunzip_a := (fun (input: File) =>
           (* Fields not used; ignore them *)
           None None None None)).
 
-Lemma flip_not_equal: forall (x y:@Fetch File),
-  x <> y -> y <> x.
-Proof.
-  auto.
-Qed.
+(*
+Definition findAndParseTransform {T:type} 
+  (disk: Disk) (inodeIndex: Z)
+  (fn: SuperBlock->GroupDescriptor->Inode->bool->T)
+  : @Fetch T :=
+  (findAndParseSuperBlock disk) _fflatmap_ (fun superblock =>
+  let groupId := ((inodeIndex - 1) (* One-indexed *)
+                  / superblock.(inodesPerGroup)) in
+  let inodeIndexInGroup :=
+    (inodeIndex - 1) mod superblock.(inodesPerGroup) in
+  (findAndParseGroupDescriptor disk superblock groupId) 
+    _fflatmap_ (fun groupdesc =>
+  (findAndParseInode disk superblock groupdesc inodeIndex)
+    _fflatmap_ (fun inode =>
+  (parseDeleted disk superblock groupdesc inodeIndex) _fflatmap_ (fun deleted =>
+  *)
+
+
 
 Definition parseFileData (disk: Disk) (inodeIndex fileIndex: Z) : @Fetch Z :=
   (* Proceed as in parseFileFromInode *)
@@ -136,12 +149,16 @@ Definition found_eq {X:Type} : forall (x y:X), Found x = Found y -> x = y.
   intros. injection H. auto.
 Qed.
 
-Ltac ext2_field_match disk inodeIndex field val T Heqe :=
-  assert ((findAndParseFile disk inodeIndex) _fmap_ 
-          (fun f => field f) = @Found T val) as to_match;
-    [vm_compute; reflexivity|];
-  apply found_eq;
-  rewrite <- to_match; rewrite <- Heqe; vm_compute; reflexivity.
+Lemma ext2_field_match (X:Type):
+  forall (fn: File->X) (x:X) (file:File) (disk:Disk) (inodeIndex:Z),
+    (Found file = findAndParseFile disk inodeIndex
+    /\ (findAndParseFile disk inodeIndex) _fmap_ (fn) = @Found X x)
+    -> fn file = x.
+Proof.
+  intros. destruct H.
+  apply found_eq.
+  rewrite <- H0. rewrite <- H. vm_compute. reflexivity.
+Qed.
 
 Lemma verify_ext2_event1 (disk:Disk) (inodeIndex:Z): 
   (exists (f:File), findAndParseFile disk inodeIndex = Found f)
@@ -158,9 +175,9 @@ Qed.
 Ltac verify_ext2_event :=
   match goal with
   | |- exists file : File,
-    isOnDisk file ?disk /\
+    isOnDisk file ?d /\
     fileSystemId file = value ?fsId /\ ?field file = value ?val =>
-    remember (findAndParseFile disk fsId) as e;
+    remember (findAndParseFile d fsId) as e;
     destruct e as [f Heqe | z Heqe | s Heqe]; [ 
       | contradict Heqe; apply verify_ext2_event1;
         apply deleted_means_value; vm_compute; eauto; reflexivity
@@ -169,11 +186,67 @@ Ltac verify_ext2_event :=
     exists f;
       split; [apply ext2_file_on_disk in Heqe; apply Heqe |
       split; [
-        ext2_field_match disk fsId fileSystemId (value fsId) (Exc Z) Heqe |
-        ext2_field_match disk fsId field (value val) (Exc Z) Heqe
+        apply ext2_field_match with (disk := d) (inodeIndex := fsId);
+          split; [apply Heqe | vm_compute; reflexivity] | 
+        apply ext2_field_match with (disk := d) (inodeIndex := fsId);
+          split; [apply Heqe | vm_compute; reflexivity]
       ]]
   end.
 
+
+
+Lemma verify_ext2_event2:
+  forall (disk:Disk) (inodeIndex:Z) (file:File),
+    findAndParseFile disk inodeIndex = Found file
+    -> fileSystemId file = value inodeIndex.
+Proof.
+  intros.
+    apply ext2_field_match with (disk := disk) (inodeIndex := inodeIndex).
+      split. auto. remember (findAndParseFile disk inodeIndex) as parse.
+        unfold findAndParseFile in Heqparse.
+        destruct (findAndParseSuperBlock disk) in Heqparse;
+          [| simpl in Heqparse; rewrite Heqparse in H; discriminate H
+           | simpl in Heqparse; rewrite Heqparse in H; discriminate H].
+        simpl in Heqparse.
+        destruct (findAndParseGroupDescriptor disk s) in Heqparse;
+          [| simpl in Heqparse; rewrite Heqparse in H; discriminate H
+           | simpl in Heqparse; rewrite Heqparse in H; discriminate H].
+        simpl in Heqparse.
+        destruct (findAndParseInode disk s g inodeIndex) in Heqparse;
+          [| simpl in Heqparse; rewrite Heqparse in H; discriminate H
+           | simpl in Heqparse; rewrite Heqparse in H; discriminate H].
+        simpl in Heqparse.
+        destruct (parseDeleted disk s g inodeIndex) in Heqparse;
+          [| simpl in Heqparse; rewrite Heqparse in H; discriminate H
+           | simpl in Heqparse; rewrite Heqparse in H; discriminate H].
+        simpl in Heqparse.
+        rewrite Heqparse. auto.
+Qed.
+
+Lemma verify_ext2_event3 {T:Type}:
+  forall (disk:Disk) (inodeIndex:Z) (file:File) (fn: File->T),
+    findAndParseFile disk inodeIndex = Found file
+    -> Found (fn file) = (findAndParseFile disk inodeIndex) _fmap_ fn.
+Proof.
+  intros.
+    rewrite H. simpl. reflexivity.
+Qed.
+
+Lemma lem {T:Type}:
+  forall (disk:Disk) (inodeIndex: Z) (fn: File->T) (val: T),
+    ((findAndParseFile disk inodeIndex) _fmap_ fn = Found val)
+    -> (exists (file:File),
+        isOnDisk file disk
+        /\ fileSystemId file = value inodeIndex
+        /\ fn file = val).
+Proof.
+  intros. remember (findAndParseFile disk inodeIndex) as e.
+  destruct e as [f Heq | z Heq | s Heq]; [| discriminate H | discriminate H].
+  exists f. 
+  split. apply ext2_file_on_disk with (inodeIndex := inodeIndex). auto.
+  split. apply verify_ext2_event2 with (disk := disk). auto.
+  apply found_eq. auto.
+Qed.
 
 
 Lemma lee_honeynet_file:
@@ -214,7 +287,7 @@ Proof.
 
   (* foundOn - verify each event *)
   unfold foundOn. intros. simpl in H.
-  repeat (destruct H; [rewrite <- H; verify_ext2_event|]).
+  repeat (destruct H; [rewrite <- H; apply lem; vm_compute; reflexivity|]).
 
   contradict H.
 
