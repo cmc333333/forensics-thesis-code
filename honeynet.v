@@ -33,79 +33,12 @@ Definition gunzip_a := (fun (input: File) =>
           (* Fields not used; ignore them *)
           None None None None)).
 
-(*
-Definition findAndParseTransform {T:type} 
-  (disk: Disk) (inodeIndex: Z)
-  (fn: SuperBlock->GroupDescriptor->Inode->bool->T)
-  : @Fetch T :=
-  (findAndParseSuperBlock disk) _fflatmap_ (fun superblock =>
-  let groupId := ((inodeIndex - 1) (* One-indexed *)
-                  / superblock.(inodesPerGroup)) in
-  let inodeIndexInGroup :=
-    (inodeIndex - 1) mod superblock.(inodesPerGroup) in
-  (findAndParseGroupDescriptor disk superblock groupId) 
-    _fflatmap_ (fun groupdesc =>
-  (findAndParseInode disk superblock groupdesc inodeIndex)
-    _fflatmap_ (fun inode =>
-  (parseDeleted disk superblock groupdesc inodeIndex) _fflatmap_ (fun deleted =>
-  *)
-
-
-
-Definition parseFileData (disk: Disk) (inodeIndex fileIndex: Z) : @Fetch Z :=
-  (* Proceed as in parseFileFromInode *)
-  (findAndParseSuperBlock disk) _fflatmap_ (fun superblock =>
-  let groupId := ((inodeIndex - 1) (* One-indexed *)
-                  / superblock.(inodesPerGroup)) in
-  let inodeIndexInGroup :=
-    (inodeIndex - 1) mod superblock.(inodesPerGroup) in
-  (findAndParseGroupDescriptor disk superblock groupId) 
-    _fflatmap_ (fun groupdesc =>
-  (findAndParseInode disk superblock groupdesc inodeIndex)
-    _fflatmap_ (fun inode =>
-  (parseDeleted disk superblock groupdesc inodeIndex) _fflatmap_ (fun deleted =>
-      (fetchInodeByte disk superblock inode fileIndex)
-  )))).
-
-(* Helper definitions which allow us to pull just one component from a file *)
-Definition parseFileDeleted (disk: Disk) (inodeIndex: Z) : @Fetch bool :=
-  (* Proceed as in parseFileFromInode *)
-  (findAndParseSuperBlock disk) _fflatmap_ (fun superblock =>
-  (* One-indexed *)
-  let groupId := ((inodeIndex - 1) / superblock.(inodesPerGroup)) in
-  let inodeIndexInGroup := (inodeIndex - 1) mod superblock.(inodesPerGroup) in
-  (findAndParseGroupDescriptor disk superblock groupId) _fflatmap_ (fun groupdesc =>
-  (findAndParseInode disk superblock groupdesc inodeIndex) _fflatmap_ (fun inode =>
-  (parseDeleted disk superblock groupdesc inodeIndex)
-  ))).
-
-Lemma deleted_means_deleted : forall (disk:Disk) (inodeIndex: Z) (del: bool), 
-  parseFileDeleted disk inodeIndex = Found del
-  -> (findAndParseFile disk inodeIndex) _fmap_ (fun f => f.(deleted)) = Found del.
-Proof.
-  intros disk inodeIndex del.
-  unfold parseFileDeleted.
-  unfold findAndParseFile.
-  destruct (findAndParseSuperBlock disk) ; [|simpl; auto |simpl; auto].
-  simpl.
-  destruct (findAndParseGroupDescriptor disk s 
-              ((inodeIndex - 1) / inodesPerGroup s)) 
-              ; [|simpl; auto |simpl; auto].
-  simpl.
-  destruct (findAndParseInode disk s g inodeIndex); [|simpl; auto |simpl; auto]. 
-    simpl.
-  destruct (parseDeleted disk s g inodeIndex); [|simpl; auto |simpl; auto].
-    simpl.
-  intros H. apply H.
-Qed.
-
-Lemma deleted_means_value: 
-  forall (disk:Disk) (inodeIndex: Z), 
-    (exists (b:bool), parseFileDeleted disk inodeIndex = Found b)
-    -> (exists (f:File), findAndParseFile disk inodeIndex = Found f).
-Proof.
+Lemma avoid_compute:
+  forall (disk:Disk) (inodeIndex: Z),
+    (exists (b:bool),
+      (findAndParseFile disk inodeIndex) _fmap_ (fun f => deleted f) = Found b)
+    -> exists (file:File), findAndParseFile disk inodeIndex = Found file.
   intros disk inodeIndex.
-  unfold parseFileDeleted.
   unfold findAndParseFile.
   destruct (findAndParseSuperBlock disk); [
     | simpl; intros assump; inversion assump; discriminate H
@@ -121,14 +54,7 @@ Proof.
   destruct (parseDeleted disk s g inodeIndex); [
     | simpl; intros assump; inversion assump; discriminate H
     | simpl; intros assump; inversion assump; discriminate H]. simpl.
-  intros _. exists (mkFile (value inodeIndex)
-                           (size i)
-                           b 
-                           (fetchInodeByte disk s i)
-                           (value (atime i))
-                           (value (mtime i))
-                           (value (ctime i))
-                           (value (dtime i))). auto.
+  intros _. eauto.
 Qed.
 
 Lemma ext2_file_on_disk: 
@@ -172,29 +98,6 @@ Proof.
   split; [discriminate | inversion H; inversion H0].
 Qed.
 
-Ltac verify_ext2_event :=
-  match goal with
-  | |- exists file : File,
-    isOnDisk file ?d /\
-    fileSystemId file = value ?fsId /\ ?field file = value ?val =>
-    remember (findAndParseFile d fsId) as e;
-    destruct e as [f Heqe | z Heqe | s Heqe]; [ 
-      | contradict Heqe; apply verify_ext2_event1;
-        apply deleted_means_value; vm_compute; eauto; reflexivity
-      | contradict Heqe; apply verify_ext2_event1;
-        apply deleted_means_value; vm_compute; eauto; reflexivity];
-    exists f;
-      split; [apply ext2_file_on_disk in Heqe; apply Heqe |
-      split; [
-        apply ext2_field_match with (disk := d) (inodeIndex := fsId);
-          split; [apply Heqe | vm_compute; reflexivity] | 
-        apply ext2_field_match with (disk := d) (inodeIndex := fsId);
-          split; [apply Heqe | vm_compute; reflexivity]
-      ]]
-  end.
-
-
-
 Lemma verify_ext2_event2:
   forall (disk:Disk) (inodeIndex:Z) (file:File),
     findAndParseFile disk inodeIndex = Found file
@@ -223,16 +126,7 @@ Proof.
         rewrite Heqparse. auto.
 Qed.
 
-Lemma verify_ext2_event3 {T:Type}:
-  forall (disk:Disk) (inodeIndex:Z) (file:File) (fn: File->T),
-    findAndParseFile disk inodeIndex = Found file
-    -> Found (fn file) = (findAndParseFile disk inodeIndex) _fmap_ fn.
-Proof.
-  intros.
-    rewrite H. simpl. reflexivity.
-Qed.
-
-Lemma lem {T:Type}:
+Lemma verify_ext2_event3 {T: Type}:
   forall (disk:Disk) (inodeIndex: Z) (fn: File->T) (val: T),
     ((findAndParseFile disk inodeIndex) _fmap_ fn = Found val)
     -> (exists (file:File),
@@ -287,7 +181,8 @@ Proof.
 
   (* foundOn - verify each event *)
   unfold foundOn. intros. simpl in H.
-  repeat (destruct H; [rewrite <- H; apply lem; vm_compute; reflexivity|]).
+  repeat (destruct H; [
+    rewrite <- H; apply verify_ext2_event3; vm_compute; reflexivity|]).
 
   contradict H.
 
@@ -297,33 +192,8 @@ Proof.
   repeat (destruct index; [vm_compute; intros; discriminate x0 |]).
   (* index is outside of the list *)
   vm_compute. intros.
-  repeat (progress (apply le_pred in x; simpl in x;
-                    try (contradict x; apply le_Sn_0))).
-Qed.
-
-
-
-
-
-Lemma byte_match: forall (disk: Disk) (inodeIndex fileIndex byte: Z),
-  (fileIndex <? 0) = false ->
-  (parseFileData disk inodeIndex fileIndex) = Found byte ->
-  (findAndParseFile disk inodeIndex) _fflatmap_ (fun f =>
-    f @[ fileIndex ]) = Found byte.
-Proof.
-  intros disk inodeIndex fileIndex byte.
-  unfold parseFileData.
-  unfold findAndParseFile.
-  destruct (findAndParseSuperBlock disk); [|simpl; auto|simpl; auto].
-  simpl.
-  destruct (findAndParseGroupDescriptor disk s ((inodeIndex - 1) /
-  inodesPerGroup s)) ; [|simpl; auto|simpl; auto].
-  simpl.
-  destruct (findAndParseInode disk s g inodeIndex); [|simpl; auto|simpl; auto]. 
-  simpl.
-  destruct (parseDeleted disk s g inodeIndex); [|simpl; auto|simpl; auto]. simpl.
-  intros gt0. unfold fetchByte. simpl.
-  rewrite gt0. intros H. apply H.
+  repeat (apply le_pred in x; simpl in x;
+                    try (contradict x; apply le_Sn_0)).
 Qed.
 
 
@@ -336,9 +206,9 @@ Lemma borland_honeynet_file:
 Proof.
   remember (findAndParseFile honeynet_image_a 23).
   destruct f; [
-    | contradict Heqf; apply verify_ext2_event1; apply deleted_means_value;
+    | contradict Heqf; apply verify_ext2_event1; apply avoid_compute;
       vm_compute; eauto
-    | contradict Heqf; apply verify_ext2_event1; apply deleted_means_value;
+    | contradict Heqf; apply verify_ext2_event1; apply avoid_compute;
       vm_compute; eauto].
   exists f.
   split. 
@@ -375,8 +245,11 @@ Proof.
       
     unfold looksLikeRootkit.
     exists (ascii2Bytes "last/ssh"); exists (ascii2Bytes "last/top").
+      set (fileNames := parseFileNames (gunzip_a f)).
+      vm_compute in fileNames.
       split. vm_compute. repeat (try (left; reflexivity); right).
       split. vm_compute. repeat (try (left; reflexivity); right).
+      clear fileNames.
       split. vm_compute. repeat (try (left; reflexivity); right).
       split. vm_compute. repeat (try (left; reflexivity); right).
     vm_compute. intros contra. inversion contra.
