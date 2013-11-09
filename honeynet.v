@@ -9,6 +9,7 @@ Require Import Coq.ZArith.ZArith.
 
 Require Import ByteData.
 Require Import Ext2.
+Require Import Ext2Lemmas.
 Require Import Fetch.
 Require Import File.
 Require Import FileNames.
@@ -33,126 +34,6 @@ Definition gunzip_a := (fun (input: File) =>
           (* Fields not used; ignore them *)
           None None None None)).
 
-Lemma avoid_compute:
-  forall (disk:Disk) (inodeIndex: Z),
-    (exists (b:bool),
-      (findAndParseFile disk inodeIndex) _fmap_ (fun f => deleted f) = Found b)
-    -> exists (file:File), findAndParseFile disk inodeIndex = Found file.
-  intros disk inodeIndex.
-  unfold findAndParseFile.
-  destruct (findAndParseSuperBlock disk); [
-    | simpl; intros assump; inversion assump; discriminate H
-    | simpl; intros assump; inversion assump; discriminate H].
-  simpl.
-  destruct (findAndParseGroupDescriptor disk s 
-              ((inodeIndex - 1) / inodesPerGroup s)); [
-    | simpl; intros assump; inversion assump; discriminate H
-    | simpl; intros assump; inversion assump; discriminate H]. simpl.
-  destruct (findAndParseInode disk s g inodeIndex); [
-    | simpl; intros assump; inversion assump; discriminate H
-    | simpl; intros assump; inversion assump; discriminate H]. simpl.
-  destruct (parseDeleted disk s g inodeIndex); [
-    | simpl; intros assump; inversion assump; discriminate H
-    | simpl; intros assump; inversion assump; discriminate H]. simpl.
-  intros _. eauto.
-Qed.
-
-Lemma ext2_file_on_disk: 
-  forall (disk:Disk) (file:File) (inodeIndex:Z),
-  Found file = findAndParseFile disk inodeIndex
-  -> isOnDisk file disk.
-Proof.
-  intros.
-  unfold isOnDisk. exists inodeIndex.
-  unfold fileEq. rewrite <- H.
-  split; [reflexivity | split; [reflexivity|]].
-  intros. reflexivity.
-Qed.
-
-
-Lemma found_eq {X:Type} : forall (x y:X), Found x = Found y -> x = y.
-  Proof.
-  intros. injection H. auto.
-Qed.
-
-Lemma ext2_field_match (X:Type):
-  forall (fn: File->X) (x:X) (file:File) (disk:Disk) (inodeIndex:Z),
-    (Found file = findAndParseFile disk inodeIndex
-    /\ (findAndParseFile disk inodeIndex) _fmap_ (fn) = @Found X x)
-    -> fn file = x.
-Proof.
-  intros. destruct H.
-  apply found_eq.
-  rewrite <- H0. rewrite <- H. vm_compute. reflexivity.
-Qed.
-
-Lemma ext2_byte_match:
-  forall (byte offset inodeIndex: Z) (file:File) (disk:Disk),
-    (Found file = findAndParseFile disk inodeIndex
-    /\ (findAndParseFile disk inodeIndex) 
-        _fflatmap_ (fun f => data f offset) = Found byte)
-    -> data file offset = Found byte.
-Proof.
-  intros. destruct H.
-  apply found_eq.
-  rewrite <- H0. rewrite <- H. vm_compute. reflexivity.
-Qed.
-
-Lemma verify_ext2_event1 (disk:Disk) (inodeIndex:Z): 
-  (exists (f:File), findAndParseFile disk inodeIndex = Found f)
-  -> (forall (z:Z), MissingAt z <> findAndParseFile disk inodeIndex)
-      /\ (forall (s:String.string), ErrorString s <> findAndParseFile disk inodeIndex).
-Proof.
-  intros H.
-  destruct (findAndParseFile disk inodeIndex).
-  split; [discriminate | discriminate].
-  split; [inversion H; inversion H0 | discriminate].
-  split; [discriminate | inversion H; inversion H0].
-Qed.
-
-Lemma verify_ext2_event2:
-  forall (disk:Disk) (inodeIndex:Z) (file:File),
-    findAndParseFile disk inodeIndex = Found file
-    -> fileSystemId file = value inodeIndex.
-Proof.
-  intros.
-    apply ext2_field_match with (disk := disk) (inodeIndex := inodeIndex).
-      split. auto. remember (findAndParseFile disk inodeIndex) as parse.
-        unfold findAndParseFile in Heqparse.
-        destruct (findAndParseSuperBlock disk) in Heqparse;
-          [| simpl in Heqparse; rewrite Heqparse in H; discriminate H
-           | simpl in Heqparse; rewrite Heqparse in H; discriminate H].
-        simpl in Heqparse.
-        destruct (findAndParseGroupDescriptor disk s) in Heqparse;
-          [| simpl in Heqparse; rewrite Heqparse in H; discriminate H
-           | simpl in Heqparse; rewrite Heqparse in H; discriminate H].
-        simpl in Heqparse.
-        destruct (findAndParseInode disk s g inodeIndex) in Heqparse;
-          [| simpl in Heqparse; rewrite Heqparse in H; discriminate H
-           | simpl in Heqparse; rewrite Heqparse in H; discriminate H].
-        simpl in Heqparse.
-        destruct (parseDeleted disk s g inodeIndex) in Heqparse;
-          [| simpl in Heqparse; rewrite Heqparse in H; discriminate H
-           | simpl in Heqparse; rewrite Heqparse in H; discriminate H].
-        simpl in Heqparse.
-        rewrite Heqparse. auto.
-Qed.
-
-Lemma verify_ext2_event3 {T: Type}:
-  forall (disk:Disk) (inodeIndex: Z) (fn: File->T) (val: T),
-    ((findAndParseFile disk inodeIndex) _fmap_ fn = Found val)
-    -> (exists (file:File),
-        isOnDisk file disk
-        /\ fileSystemId file = value inodeIndex
-        /\ fn file = val).
-Proof.
-  intros. remember (findAndParseFile disk inodeIndex) as e.
-  destruct e as [f Heq | z Heq | s Heq]; [| discriminate H | discriminate H].
-  exists f. 
-  split. apply ext2_file_on_disk with (inodeIndex := inodeIndex). auto.
-  split. apply verify_ext2_event2 with (disk := disk). auto.
-  apply found_eq. auto.
-Qed.
 
 
 Lemma lee_honeynet_file:
@@ -194,7 +75,7 @@ Proof.
   (* foundOn - verify each event *)
   unfold foundOn. intros. simpl in H.
   repeat (destruct H; [
-    rewrite <- H; apply verify_ext2_event3; vm_compute; reflexivity|]).
+    rewrite <- H; apply verify_ext2_event; vm_compute; reflexivity|]).
 
   contradict H.
 
@@ -208,7 +89,6 @@ Proof.
                     try (contradict x; apply le_Sn_0)).
 Qed.
 
-
 Lemma borland_honeynet_file:
   exists (file: File),
   (isOnDisk file honeynet_image_a)
@@ -218,9 +98,9 @@ Lemma borland_honeynet_file:
 Proof.
   remember (findAndParseFile honeynet_image_a 23).
   destruct f; [
-    | contradict Heqf; apply verify_ext2_event1; apply avoid_compute;
+    | contradict Heqf; apply ext2_fetch_excl_middle; apply ext2_avoid_compute;
       vm_compute; eauto
-    | contradict Heqf; apply verify_ext2_event1; apply avoid_compute;
+    | contradict Heqf; apply ext2_fetch_excl_middle; apply ext2_avoid_compute;
       vm_compute; eauto].
   exists f.
   split. 

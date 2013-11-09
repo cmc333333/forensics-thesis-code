@@ -34,3 +34,8 @@ Fixpoint fetch_flatten {A} (lst: list (@Fetch A)): list A :=
     | _ :: tail => fetch_flatten tail
     | nil => nil
   end.
+
+Lemma wrap_with_found {X:Type} : forall (x y:X), Found x = Found y -> x = y.
+  Proof.
+  intros. injection H. auto.
+Qed.

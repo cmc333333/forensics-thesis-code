@@ -9,6 +9,7 @@ default:
 	coqc FileSystems
 	coqc Tar
 	coqc Timeline
+	coqc Ext2Lemmas
 	coqc example_images
 
 clean:
