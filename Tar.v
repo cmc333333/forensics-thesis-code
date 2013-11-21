@@ -93,8 +93,8 @@ Definition parseFileNames (file: File): list (list Z) :=
 
 Definition looksLikeRootkit (file: File) :=
   exists (filename1 filename2: ByteString),
-    (In filename1 (parseFileNames file))
-    /\ (In filename2 (parseFileNames file))
+    (existsb (listZ_eqb filename1) (parseFileNames file)) = true
+    /\ (existsb (listZ_eqb filename2) (parseFileNames file)) = true
     /\ (FileNames.systemFile filename1)
     /\ (FileNames.systemFile filename2)
-    /\ filename1 <> filename2.
+    /\ (listZ_eqb filename1 filename2) = false.

@@ -131,10 +131,10 @@ Proof.
     exists (ascii2Bytes "last/ssh"); exists (ascii2Bytes "last/top").
       set (fileNames := parseFileNames (gunzip_a f)).
       vm_compute in fileNames.
-      split. vm_compute. repeat (try (left; reflexivity); right).
-      split. vm_compute. repeat (try (left; reflexivity); right).
+      split. vm_compute. reflexivity.
+      split. vm_compute. reflexivity.
       clear fileNames.
       split. vm_compute. repeat (try (left; reflexivity); right).
       split. vm_compute. repeat (try (left; reflexivity); right).
-    vm_compute. intros contra. inversion contra.
+    vm_compute. reflexivity.
 Qed.

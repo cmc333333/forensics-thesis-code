@@ -87,3 +87,9 @@ end.
 
 Definition seq_lendu (disk: Disk) (offset: Z) (length: Z): @Fetch Z :=
   (seq_list disk offset length) _fmap_ (fun tail => lendu tail).
+
+Fixpoint listZ_eqb (l r: list Z) := match (l, r) with
+  | (nil, nil) => true
+  | (l :: ltail, r :: rtail) => (andb (l =? r) (listZ_eqb ltail rtail))
+  | (_, _) => false
+end.
