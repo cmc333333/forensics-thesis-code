@@ -6,6 +6,7 @@
 
 Require Import Coq.Lists.List.
 Require Import Coq.ZArith.ZArith.
+Require Evm_compute.
 
 Require Import ByteData.
 Require Import Ext2.
@@ -89,52 +90,86 @@ Proof.
                     try (contradict x; apply le_Sn_0)).
 Qed.
 
-Lemma borland_honeynet_file:
-  exists (file: File),
-  (isOnDisk file honeynet_image_a)
-  /\ isDeleted file
-  /\ isGzip file
-  /\ Tar.looksLikeRootkit (gunzip_a file).
+Lemma bar2 : 
+  forall (A B : Type) (f : A -> B) (x : A) (y : B) (z : @Fetch A), 
+    (match z with
+      | Found v => Found (f v)
+      | ErrorString str => ErrorString str
+      | MissingAt pos => MissingAt pos
+    end = Found y) ->
+    z = Found x ->
+    f x = y.
 Proof.
-  remember (findAndParseFile honeynet_image_a 23).
-  destruct f; [
-    | contradict Heqf; apply ext2_fetch_excl_middle; apply ext2_avoid_compute;
-      vm_compute; eauto
-    | contradict Heqf; apply ext2_fetch_excl_middle; apply ext2_avoid_compute;
-      vm_compute; eauto].
-  exists f.
-  split. 
-    (* isOnDisk *)
-    apply ext2_file_on_disk in Heqf. apply Heqf.
+  intros A B f x y z Hsome Hf.
+  destruct z; [
+    injection Hsome; intros; subst;
+      injection Hf; intros; subst;
+        reflexivity
+    | discriminate Hf
+    | discriminate Hf
+  ].
+Qed.
 
-  split.
-    (* isDeleted *)
-    unfold isDeleted.
-    apply ext2_field_match with (disk := honeynet_image_a) (inodeIndex := 23).
-    split; [auto | vm_compute; reflexivity].
+Lemma borland_honeynet_file:
+  exists f: File,
+  Found f = (findAndParseFile honeynet_image_a 23)
+  /\ isDeleted f
+  /\ isGzip f
+  /\ Tar.looksLikeRootkit (gunzip_a f).
+  Proof.
+    set (ff := findAndParseFile honeynet_image_a 23).
+    destruct ff eqn:Hf.
+    exists f.
+    repeat split.
 
-  split.
-    (* isGzip *)
-    unfold isGzip. 
-    unfold fetchByte. simpl.
-    split.
-      apply ext2_byte_match with (disk := honeynet_image_a) (inodeIndex := 23).
-      split ; [auto | vm_compute; reflexivity].
-    split.
-      apply ext2_byte_match with (disk := honeynet_image_a) (inodeIndex := 23).
-      split ; [auto | vm_compute; reflexivity].
 
-      apply ext2_byte_match with (disk := honeynet_image_a) (inodeIndex := 23).
-      split ; [auto | vm_compute; reflexivity].
-      
+
+
+    remember (findAndParseFile honeynet_image_a 23).
+    destruct f.
+    exists f.
+    repeat split.
+
+
+
+
+    evm in ff blacklist [ (fetchInodeByte honeynet_image_a) ;
+      isDeleted ; isGzip ; looksLikeRootkit ; gunzip_a ]. 
+    cbv [-fetchInodeByte] in ff.
+
+    eexists.
+    unfold findAndParseFile.
+    Show Proof.
+    evm blacklist [ (fetchInodeByte honeynet_image_a) ;
+      isDeleted ; isGzip ; looksLikeRootkit ; gunzip_a ]. 
+    Show Proof.
+    evm blacklist [ (fetchInodeByte honeynet_image_a) ]. 
+    (*
+    unfold findAndParseFile.
+    evm blacklist [ (fetchInodeByte honeynet_image_a) ;
+      isDeleted ; isGzip ; looksLikeRootkit ; gunzip_a ]. 
+    Show Proof.
+    *)
+
+
+    remember (findAndParseFile honeynet_image_a 23).
+    unfold findAndParseFile in Heqf.
+    Show Proof.
+    evm in Heqf blacklist [ mkFile ].
+    evm in Heqf blacklist [ (fetchInodeByte honeynet_image_a) ]. 
+    Show Proof.
+    rewrite Heqf. clear f Heqf.
+    split. reflexivity.
+    split. vm_compute. repeat( split; [ reflexivity |]). reflexivity.
     unfold looksLikeRootkit.
     exists (ascii2Bytes "last/ssh"); exists (ascii2Bytes "last/top").
-      set (fileNames := parseFileNames (gunzip_a f)).
-      vm_compute in fileNames.
-      split. vm_compute. reflexivity.
-      split. vm_compute. reflexivity.
-      clear fileNames.
-      split. vm_compute. repeat (try (left; reflexivity); right).
-      split. vm_compute. repeat (try (left; reflexivity); right).
+    unfold gunzip_a. simpl parseFileNames.
+    (* Show Proof. *)
+    split. vm_compute. reflexivity.
+    (* Show Proof. *)
+    split. vm_compute. reflexivity.
+    split. vm_compute. repeat (try (left; reflexivity); right).
+    split. vm_compute. repeat (try (left; reflexivity); right).
     vm_compute. reflexivity.
+    Show Proof.
 Qed.
