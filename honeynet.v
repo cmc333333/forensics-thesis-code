@@ -6,18 +6,19 @@
 
 Require Import Coq.Lists.List.
 Require Import Coq.ZArith.ZArith.
-Require Evm_compute.
+(* Require Evm_compute. *)
 
 Require Import ByteData.
 Require Import Ext2.
-(*Require Import Ext2Lemmas.*)
+Require Import Ext2Lemmas.
 Require Import Fetch.
 Require Import File.
+Require Import FileData.
 Require Import FileNames.
 Require Import FileSystems.
 Require Import FileTypes.
 Require Import Tar.
-(*Require Import Timeline.*)
+Require Import Timeline.
 Require Import Util.
 
 Require Import example_images.
@@ -36,37 +37,36 @@ Definition gunzip_a := (fun (input: File) =>
 
 
 
-(*
 Lemma lee_honeynet_file:
   (Timeline.isSound (
     (* Mar 16 01 12:36:48 *)
       (* rootkit lk.tar.gz downloaded *)
-        (FileModification 984706608 23)
+        (FileModification 984706608 (Ext2FS 23))
     (* Mar 16 01 12:44:50 *)
       (* Gunzip and Untar rootkit lk.tar.gz *)
-        :: (FileAccess 984707090 23)
+        :: (FileAccess 984707090 (Ext2FS 23))
       (* change ownership of rootkit files to root.root *)
-        :: (FileAccess 984707102 30130)
+        :: (FileAccess 984707102 (Ext2FS 30130))
       (* deletion of original /bin/netstat *)
-        :: (FileDeletion 984707102 30188)
+        :: (FileDeletion 984707102 (Ext2FS 30188))
       (* insertion of trojan netstat *)
-        :: (FileCreation 984707102 2056) 
+        :: (FileCreation 984707102 (Ext2FS 2056))
       (* deletion of original /bin/ps *)
-        :: (FileDeletion 984707102 30191)
+        :: (FileDeletion 984707102 (Ext2FS 30191))
       (* insertion of trojan ps *)
-        :: (FileCreation 984707102 2055) 
+        :: (FileCreation 984707102 (Ext2FS 2055))
       (* deletion of origin /sbin/ifconfig *)
-        :: (FileDeletion 984707102 48284)
+        :: (FileDeletion 984707102 (Ext2FS 48284))
       (* insertion of trojan ifconfig *)
-        :: (FileCreation 984707102 2057) 
+        :: (FileCreation 984707102 (Ext2FS 2057))
     (* Mar 16 01 12:45:03 *)
       (* the copy of service files to /etc *)
-        :: (FileAccess 984707103 30131)  
+        :: (FileAccess 984707103 (Ext2FS 30131))
       (* hackers services file copied on top of original *)
-        :: (FileCreation 984707103 26121)
+        :: (FileCreation 984707103 (Ext2FS 26121))
     (* Mar 16 01 12:45:05 *)
       (* deletion of rootkit lk.tar.gz *)
-        :: (FileDeletion 984707105 23)   
+        :: (FileDeletion 984707105 (Ext2FS 23))
     :: nil)
     honeynet_image_a
   ).
@@ -89,7 +89,6 @@ Proof.
   repeat (apply le_pred in x; simpl in x;
                     try (contradict x; apply le_Sn_0)).
 Qed.
-*)
 
 Lemma bar2 : 
   forall (A B : Type) (f : A -> B) (x : A) (y : B) (z : @Fetch A), 
@@ -113,7 +112,7 @@ Qed.
 
 Lemma borland_honeynet_file:
   exists f: File,
-  Found f = (findAndParseFile honeynet_image_a 23)
+  isOnDisk f honeynet_image_a
   /\ isDeleted f
   /\ isGzip f honeynet_image_a
   /\ Tar.looksLikeRootkit (gunzip_a f) honeynet_image_a.

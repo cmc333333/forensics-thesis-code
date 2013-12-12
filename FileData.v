@@ -25,3 +25,16 @@ Fixpoint fetchByte (file: File) (disk: Disk) (offset: Z): @Fetch Z :=
 
 (* Cleaner notation for file access. *)
 Notation "f @[ i | d ]" := (fetchByte f d i) (at level 60).
+
+
+
+Definition isOnDiskTry1 (file: File) (disk: Disk) :=
+  exists (start: Z), forall (i: Z),
+  (i >= 0 /\ i < file.(fileSize)) ->
+    file @[ i | disk ] = disk (start + i).
+
+Definition isOnDisk (file: File) (disk: Disk) :=
+  match file.(fileSystem) with
+  | Ext2FS inodeIndex => (Ext2.findAndParseFile disk inodeIndex) = Found file
+  | _ => False
+  end.

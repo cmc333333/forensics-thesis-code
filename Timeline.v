@@ -2,16 +2,17 @@ Require Import Coq.ZArith.ZArith.
 
 Require Import ByteData.
 Require Import File.
+Require Import FileData.
 Require Import FileSystems.
 Require Import Util.
 
 Open Local Scope Z.
 
 Inductive Event: Type :=
-  | FileAccess: Z -> Z -> Event
-  | FileModification: Z -> Z -> Event
-  | FileCreation: Z -> Z -> Event
-  | FileDeletion: Z -> Z -> Event
+  | FileAccess: Z -> FileSystem -> Event
+  | FileModification: Z -> FileSystem -> Event
+  | FileCreation: Z -> FileSystem -> Event
+  | FileDeletion: Z -> FileSystem -> Event
 .
 
 Definition Timeline: Type := list Event.
@@ -33,20 +34,16 @@ Definition beforeOrConcurrent (lhs rhs: Event) :=
 Definition foundOn (event: Event) (disk: Disk) : Prop :=
   exists (file: File),
     isOnDisk file disk
-    /\ (match event with
-        | FileAccess timestamp fsId =>
-            file.(fileSystemId) = value fsId
-            /\ file.(lastAccess) = value timestamp
-       | FileModification timestamp fsId =>
-            file.(fileSystemId) = value fsId
-            /\ file.(lastModification) = value timestamp
-       | FileCreation timestamp fsId =>
-            file.(fileSystemId) = value fsId
-            /\ file.(lastCreated) = value timestamp
-       | FileDeletion timestamp fsId =>
-            file.(fileSystemId) = value fsId
-            /\ file.(lastDeleted) = value timestamp
-       end).
+    /\ match event with
+       | FileAccess timestamp fs =>
+          fs = file.(fileSystem) /\ file.(lastAccess) = value timestamp
+       | FileModification timestamp fs =>
+          fs = file.(fileSystem) /\ file.(lastModification) = value timestamp
+       | FileCreation timestamp fs =>
+          fs = file.(fileSystem) /\ file.(lastCreated) = value timestamp
+       | FileDeletion timestamp fs =>
+          fs = file.(fileSystem) /\ file.(lastDeleted) = value timestamp
+       end.
 
 Definition isInOrder (timeline: Timeline) :=
   (* Events are in the correct sequence *)

@@ -3,8 +3,9 @@ Require Import Coq.ZArith.ZArith.
 Require Import ByteData.
 Require Import Ext2.
 Require Import Fetch.
-Require Import FileSystems.
 Require Import File.
+Require Import FileData.
+Require Import FileSystems.
 
 Lemma ext2_avoid_compute:
   forall (disk:Disk) (inodeIndex: Z),
@@ -30,16 +31,37 @@ Lemma ext2_avoid_compute:
   intros _. eauto.
 Qed.
 
+Lemma findAndParseFile_ext2FS:
+  forall (disk: Disk) (inodeIndex: Z) (file: File),
+    findAndParseFile disk inodeIndex = Found file ->
+      file.(fileSystem) = Ext2FS inodeIndex.
+Proof.
+  intros.
+  unfold findAndParseFile in H.
+  destruct (findAndParseSuperBlock disk); [ | discriminate H | discriminate H].
+  simpl in H.
+  destruct (findAndParseGroupDescriptor disk s 
+              ((inodeIndex - 1) / inodesPerGroup s)); [
+    | discriminate H | discriminate H]. simpl in H.
+  destruct (findAndParseInode disk s g inodeIndex); [
+    | discriminate H | discriminate H]. simpl in H.
+  destruct (parseDeleted disk s g inodeIndex); [
+    | discriminate H | discriminate H]. simpl in H.
+  inversion H.
+  reflexivity.
+Qed.
+
 Lemma ext2_file_on_disk: 
   forall (disk:Disk) (file:File) (inodeIndex:Z),
   Found file = findAndParseFile disk inodeIndex
   -> isOnDisk file disk.
 Proof.
   intros.
-  unfold isOnDisk. exists inodeIndex.
-  unfold fileEq. rewrite <- H.
-  split; [reflexivity | split; [reflexivity|]].
-  intros. reflexivity.
+  unfold isOnDisk. 
+  assert (file.(fileSystem) = Ext2FS inodeIndex).
+  apply findAndParseFile_ext2FS with (disk := disk).
+  auto.
+  rewrite H0. auto.
 Qed.
 
 Lemma ext2_field_match (X:Type):
@@ -53,6 +75,7 @@ Proof.
   rewrite <- H0. rewrite <- H. vm_compute. reflexivity.
 Qed.
 
+(*
 Lemma ext2_byte_match:
   forall (byte offset inodeIndex: Z) (file:File) (disk:Disk),
     (Found file = findAndParseFile disk inodeIndex
@@ -64,6 +87,7 @@ Proof.
   apply wrap_with_found.
   rewrite <- H0. rewrite <- H. vm_compute. reflexivity.
 Qed.
+*)
 
 Lemma ext2_fetch_excl_middle (disk:Disk) (inodeIndex:Z): 
   (exists (f:File), findAndParseFile disk inodeIndex = Found f)
@@ -77,6 +101,7 @@ Proof.
   split; [discriminate | inversion H; inversion H0].
 Qed.
 
+(*
 Lemma inodeindex_is_fsid:
   forall (disk:Disk) (inodeIndex:Z) (file:File),
     findAndParseFile disk inodeIndex = Found file
@@ -104,19 +129,20 @@ Proof.
         simpl in Heqparse.
         rewrite Heqparse. auto.
 Qed.
+*)
 
 Lemma verify_ext2_event {T: Type}:
   forall (disk:Disk) (inodeIndex: Z) (fn: File->T) (val: T),
     ((findAndParseFile disk inodeIndex) _fmap_ fn = Found val)
     -> (exists (file:File),
         isOnDisk file disk
-        /\ fileSystemId file = value inodeIndex
+        /\ Ext2FS inodeIndex = fileSystem file
         /\ fn file = val).
 Proof.
   intros. remember (findAndParseFile disk inodeIndex) as e.
   destruct e as [f Heq | z Heq | s Heq]; [| discriminate H | discriminate H].
   exists f. 
   split. apply ext2_file_on_disk with (inodeIndex := inodeIndex). auto.
-  split. apply inodeindex_is_fsid with (disk := disk). auto.
+  split. symmetry. apply findAndParseFile_ext2FS with (disk := disk). auto.
   apply wrap_with_found. auto.
 Qed.
