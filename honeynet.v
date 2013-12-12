@@ -117,24 +117,34 @@ Lemma borland_honeynet_file:
   /\ isGzip f honeynet_image_a
   /\ Tar.looksLikeRootkit (gunzip_a f) honeynet_image_a.
   Proof.
-    exists (mkFile (Ext2FS 23)
-                   520333
-                   true
-                   (Some 984707090)
-                   (Some 984706608)
-                   (Some 984707105)
-                   (Some 984707105)).
+    set (file := mkFile (Ext2FS 23)
+                         520333
+                         true
+                        (Some 984707090)
+                        (Some 984706608)
+                        (Some 984707105)
+                        (Some 984707105)).
+    exists file.
     split. vm_compute. reflexivity.
+    Show Proof.
     split. reflexivity.
+    Show Proof.
     split. vm_compute. repeat (split ; [reflexivity| ]); reflexivity.
+    Show Proof.
     unfold looksLikeRootkit.
     exists (ascii2Bytes "last/ssh"); exists (ascii2Bytes "last/top").
-    unfold gunzip_a. simpl parseFileNames.
-
+    Show Proof.
+    set (fileNames := parseFileNames (gunzip_a file) honeynet_image_a).
+    vm_compute in fileNames.
+    Show Proof.
     split. vm_compute. reflexivity.
+    Show Proof.
     split. vm_compute. reflexivity.
+    Show Proof.
     split. vm_compute. repeat (try (left; reflexivity); right).
+    Show Proof.
     split. vm_compute. repeat (try (left; reflexivity); right).
+    Show Proof.
     vm_compute. reflexivity.
     Show Proof.
 Qed.
