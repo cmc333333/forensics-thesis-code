@@ -10,14 +10,14 @@ Require Evm_compute.
 
 Require Import ByteData.
 Require Import Ext2.
-Require Import Ext2Lemmas.
+(*Require Import Ext2Lemmas.*)
 Require Import Fetch.
 Require Import File.
 Require Import FileNames.
 Require Import FileSystems.
 Require Import FileTypes.
 Require Import Tar.
-Require Import Timeline.
+(*Require Import Timeline.*)
 Require Import Util.
 
 Require Import example_images.
@@ -28,15 +28,15 @@ Definition honeynet_image_a : Disk := honeynet_map.
 (* All gunzip operations return the file mentioned *)
 Definition gunzip_a := (fun (input: File) => 
   let asDisk := Disk_of_Map_Z_Z gunzipped_23 in
-  (mkFile None (* no need for an id *)
+  (mkFile (FileSystems.MockFS asDisk)
           1454080 (* uncompressed file size *)
           input.(deleted) 
-          asDisk
           (* Fields not used; ignore them *)
           None None None None)).
 
 
 
+(*
 Lemma lee_honeynet_file:
   (Timeline.isSound (
     (* Mar 16 01 12:36:48 *)
@@ -89,6 +89,7 @@ Proof.
   repeat (apply le_pred in x; simpl in x;
                     try (contradict x; apply le_Sn_0)).
 Qed.
+*)
 
 Lemma bar2 : 
   forall (A B : Type) (f : A -> B) (x : A) (y : B) (z : @Fetch A), 
@@ -114,59 +115,24 @@ Lemma borland_honeynet_file:
   exists f: File,
   Found f = (findAndParseFile honeynet_image_a 23)
   /\ isDeleted f
-  /\ isGzip f
-  /\ Tar.looksLikeRootkit (gunzip_a f).
+  /\ isGzip f honeynet_image_a
+  /\ Tar.looksLikeRootkit (gunzip_a f) honeynet_image_a.
   Proof.
-    set (ff := findAndParseFile honeynet_image_a 23).
-    destruct ff eqn:Hf.
-    exists f.
-    repeat split.
-
-
-
-
-    remember (findAndParseFile honeynet_image_a 23).
-    destruct f.
-    exists f.
-    repeat split.
-
-
-
-
-    evm in ff blacklist [ (fetchInodeByte honeynet_image_a) ;
-      isDeleted ; isGzip ; looksLikeRootkit ; gunzip_a ]. 
-    cbv [-fetchInodeByte] in ff.
-
-    eexists.
-    unfold findAndParseFile.
-    Show Proof.
-    evm blacklist [ (fetchInodeByte honeynet_image_a) ;
-      isDeleted ; isGzip ; looksLikeRootkit ; gunzip_a ]. 
-    Show Proof.
-    evm blacklist [ (fetchInodeByte honeynet_image_a) ]. 
-    (*
-    unfold findAndParseFile.
-    evm blacklist [ (fetchInodeByte honeynet_image_a) ;
-      isDeleted ; isGzip ; looksLikeRootkit ; gunzip_a ]. 
-    Show Proof.
-    *)
-
-
-    remember (findAndParseFile honeynet_image_a 23).
-    unfold findAndParseFile in Heqf.
-    Show Proof.
-    evm in Heqf blacklist [ mkFile ].
-    evm in Heqf blacklist [ (fetchInodeByte honeynet_image_a) ]. 
-    Show Proof.
-    rewrite Heqf. clear f Heqf.
+    exists (mkFile (Ext2FS 23)
+                   520333
+                   true
+                   (Some 984707090)
+                   (Some 984706608)
+                   (Some 984707105)
+                   (Some 984707105)).
+    split. vm_compute. reflexivity.
     split. reflexivity.
-    split. vm_compute. repeat( split; [ reflexivity |]). reflexivity.
+    split. vm_compute. repeat (split ; [reflexivity| ]); reflexivity.
     unfold looksLikeRootkit.
     exists (ascii2Bytes "last/ssh"); exists (ascii2Bytes "last/top").
     unfold gunzip_a. simpl parseFileNames.
-    (* Show Proof. *)
+
     split. vm_compute. reflexivity.
-    (* Show Proof. *)
     split. vm_compute. reflexivity.
     split. vm_compute. repeat (try (left; reflexivity); right).
     split. vm_compute. repeat (try (left; reflexivity); right).

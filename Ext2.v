@@ -399,6 +399,19 @@ Definition parseDeleted (disk: Disk) (superblock: SuperBlock)
                      (inodeIndexInGroup mod 8)))
   ).
 
+Definition fileByte (disk: Disk) (inodeIndex offset: Z)
+  : @Fetch Z :=
+  (findAndParseSuperBlock disk) _fflatmap_ (fun superblock =>
+  let groupId := ((inodeIndex - 1) (* One-indexed *)
+                  / superblock.(inodesPerGroup)) in
+  let inodeIndexInGroup :=
+    (inodeIndex - 1) mod superblock.(inodesPerGroup) in
+  (findAndParseGroupDescriptor disk superblock groupId) 
+    _fflatmap_ (fun groupdesc =>
+  (findAndParseInode disk superblock groupdesc inodeIndex)
+    _fflatmap_ (fun inode =>
+      fetchInodeByte disk superblock inode offset
+  ))).
 
 Definition findAndParseFile (disk: Disk) (inodeIndex: Z) 
   : @Fetch File :=
@@ -414,12 +427,9 @@ Definition findAndParseFile (disk: Disk) (inodeIndex: Z)
   (parseDeleted disk superblock groupdesc inodeIndex)
     _fmap_ (fun deleted =>
     mkFile
-      (value inodeIndex)
+      (FileSystems.Ext2FS inodeIndex)
       inode.(size)
       deleted
-      (* (fun (idx:Z) => ByteData.find idx (annoying disk superblock inode
-      (0::1::2::nil))) *)
-      (fetchInodeByte disk superblock inode)
       (value inode.(atime))
       (value inode.(mtime))
       (value inode.(ctime))
