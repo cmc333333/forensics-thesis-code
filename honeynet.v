@@ -75,8 +75,10 @@ Proof.
 
   (* foundOn - verify each event *)
   unfold foundOn. intros. simpl in H.
+  Show Proof.
   repeat (destruct H; [
     rewrite <- H; apply verify_ext2_event; vm_compute; reflexivity|]).
+  Show Proof.
 
   contradict H.
 
@@ -88,26 +90,7 @@ Proof.
   vm_compute. intros.
   repeat (apply le_pred in x; simpl in x;
                     try (contradict x; apply le_Sn_0)).
-Qed.
-
-Lemma bar2 : 
-  forall (A B : Type) (f : A -> B) (x : A) (y : B) (z : @Fetch A), 
-    (match z with
-      | Found v => Found (f v)
-      | ErrorString str => ErrorString str
-      | MissingAt pos => MissingAt pos
-    end = Found y) ->
-    z = Found x ->
-    f x = y.
-Proof.
-  intros A B f x y z Hsome Hf.
-  destruct z; [
-    injection Hsome; intros; subst;
-      injection Hf; intros; subst;
-        reflexivity
-    | discriminate Hf
-    | discriminate Hf
-  ].
+  Show Proof.
 Qed.
 
 Lemma borland_honeynet_file:
