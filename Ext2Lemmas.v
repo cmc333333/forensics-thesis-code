@@ -6,6 +6,7 @@ Require Import Fetch.
 Require Import File.
 Require Import FileData.
 Require Import FileSystems.
+Require Import Timeline.
 
 Lemma ext2_avoid_compute:
   forall (disk:Disk) (inodeIndex: Z),
@@ -131,13 +132,53 @@ Proof.
 Qed.
 *)
 
-Lemma verify_ext2_event {T: Type}:
-  forall (disk:Disk) (inodeIndex: Z) (fn: File->T) (val: T),
-    ((findAndParseFile disk inodeIndex) _fmap_ fn = Found val)
-    -> (exists (file:File),
-        isOnDisk file disk
-        /\ Ext2FS inodeIndex = fileSystem file
-        /\ fn file = val).
+Lemma verify_ext2_access:
+  forall (disk: Disk) (inodeIndex: Z) (timestamp: Z),
+    ((findAndParseFile disk inodeIndex) _fmap_ lastAccess 
+      = (Found (Some timestamp))
+    -> foundOn (FileAccess timestamp (Ext2FS inodeIndex)) disk).
+Proof.
+  intros. remember (findAndParseFile disk inodeIndex) as e.
+  destruct e as [f Heq | z Heq | s Heq]; [| discriminate H | discriminate H].
+  exists f. 
+  split. apply ext2_file_on_disk with (inodeIndex := inodeIndex). auto.
+  split. symmetry. apply findAndParseFile_ext2FS with (disk := disk). auto.
+  apply wrap_with_found. auto.
+Qed.
+
+Lemma verify_ext2_modification:
+  forall (disk: Disk) (inodeIndex: Z) (timestamp: Z),
+    ((findAndParseFile disk inodeIndex) _fmap_ lastModification
+      = (Found (Some timestamp))
+    -> foundOn (FileModification timestamp (Ext2FS inodeIndex)) disk).
+Proof.
+  intros. remember (findAndParseFile disk inodeIndex) as e.
+  destruct e as [f Heq | z Heq | s Heq]; [| discriminate H | discriminate H].
+  exists f. 
+  split. apply ext2_file_on_disk with (inodeIndex := inodeIndex). auto.
+  split. symmetry. apply findAndParseFile_ext2FS with (disk := disk). auto.
+  apply wrap_with_found. auto.
+Qed.
+
+Lemma verify_ext2_creation:
+  forall (disk: Disk) (inodeIndex: Z) (timestamp: Z),
+    ((findAndParseFile disk inodeIndex) _fmap_ lastCreated
+      = (Found (Some timestamp))
+    -> foundOn (FileCreation timestamp (Ext2FS inodeIndex)) disk).
+Proof.
+  intros. remember (findAndParseFile disk inodeIndex) as e.
+  destruct e as [f Heq | z Heq | s Heq]; [| discriminate H | discriminate H].
+  exists f. 
+  split. apply ext2_file_on_disk with (inodeIndex := inodeIndex). auto.
+  split. symmetry. apply findAndParseFile_ext2FS with (disk := disk). auto.
+  apply wrap_with_found. auto.
+Qed.
+
+Lemma verify_ext2_deletion:
+  forall (disk: Disk) (inodeIndex: Z) (timestamp: Z),
+    ((findAndParseFile disk inodeIndex) _fmap_ lastDeleted
+      = (Found (Some timestamp))
+    -> foundOn (FileDeletion timestamp (Ext2FS inodeIndex)) disk).
 Proof.
   intros. remember (findAndParseFile disk inodeIndex) as e.
   destruct e as [f Heq | z Heq | s Heq]; [| discriminate H | discriminate H].

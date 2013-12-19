@@ -15,6 +15,19 @@ Inductive Event: Type :=
   | FileDeletion: Z -> FileSystem -> Event
 .
 
+Definition eqb (lhs rhs: Event) :=
+  match (lhs, rhs) with
+  | (FileAccess l lfs, FileAccess r rfs) => 
+      andb (FileSystems.eqb lfs rfs) (Z.eqb l r)
+  | (FileModification l lfs, FileModification r rfs) => 
+      andb (FileSystems.eqb lfs rfs) (Z.eqb l r)
+  | (FileCreation l lfs, FileCreation r rfs) =>
+      andb (FileSystems.eqb lfs rfs) (Z.eqb l r)
+  | (FileDeletion l lfs, FileDeletion r rfs) =>
+      andb (FileSystems.eqb lfs rfs) (Z.eqb l r)
+  | _ => false
+  end.
+
 Definition Timeline: Type := list Event.
 
 Definition timestampOf (event: Event) : Exc Z :=
@@ -47,17 +60,22 @@ Definition foundOn (event: Event) (disk: Disk) : Prop :=
 
 Definition isInOrder (timeline: Timeline) :=
   (* Events are in the correct sequence *)
-  (forall (index: nat),
-    (index < ((length timeline) - 1) )%nat ->
-      match (nth_error timeline index, 
-             nth_error timeline (index + 1)) with
-      | (value lhsEvent, value rhsEvent) => 
-        beforeOrConcurrent lhsEvent rhsEvent
-      | _ => False
-      end).
+  let firstEvents := firstn (length timeline - 1) timeline in
+  let secondEvents := skipn 1 timeline in
+  let pairs := combine firstEvents secondEvents in
+  forall (pair: (Event*Event)),
+    In pair pairs -> beforeOrConcurrent (fst pair) (snd pair).
 
 Definition isSound (timeline: Timeline) (disk: Disk) :=
+  let pairs := combine timeline (skipn 1 timeline) in
+  forall (pair: (Event*Event)),
+    In pair pairs -> 
+      (foundOn (fst pair) disk)
+      /\ (foundOn (snd pair) disk)
+      /\ beforeOrConcurrent (fst pair) (snd pair).
+(*
   (forall (event: Event),
     (* Event is evident from the disk *)
     (In event timeline) -> (foundOn event disk))
   /\ isInOrder timeline.
+*)
