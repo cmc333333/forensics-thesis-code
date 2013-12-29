@@ -15,7 +15,7 @@ Definition borland_evidence (disk: Disk) (unzip: File->File) :=
 
 Definition borland_compute (disk: Disk) (unzip: File->File)
   (file: File) (filename1 filename2: ByteString) :=
-  (isOnDisk_comp file disk)
+  (isOnDisk_compute file disk)
   && file.(deleted)
   && (isGzip_compute file disk)
   && Tar.looksLikeRootkit_compute (unzip file) disk filename1 filename2.

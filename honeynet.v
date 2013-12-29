@@ -60,25 +60,66 @@ Definition lee_timeline :=
       :: (FileDeletion 984707105 (Ext2FS 23))
   :: nil.
 
+Definition file23 := mkFile (Ext2FS 23) 520333 true 
+                            (Some 984707090) 
+                            (Some 984706608)
+                            (Some 984707105)
+                            (Some 984707105).
+Definition file2055 := mkFile (Ext2FS 2055) 33280 false
+                              (Some 984707090) 
+                              (Some 983201013)
+                              (Some 984707102)
+                              (Some 0).
+Definition file2056 := mkFile (Ext2FS 2056) 35300 false
+                              (Some 984707090) 
+                              (Some 983201022)
+                              (Some 984707102)
+                              (Some 0).
+Definition file2057 := mkFile (Ext2FS 2057) 19840 false
+                              (Some 984707105)
+                              (Some 983201027)
+                              (Some 984707102)
+                              (Some 0).
+Definition file26121 := mkFile (Ext2FS 26121) 11407 false
+                               (Some 984753658)
+                               (Some 984707103)
+                               (Some 984707103)
+                               (Some 0).
+Definition file30130 := mkFile (Ext2FS 30130) 11952 false
+                               (Some 984707102) 
+                               (Some 952479772)
+                               (Some 984654676)
+                               (Some 0).
+Definition file30131 := mkFile (Ext2FS 30131) 33392 false
+                               (Some 984707103)
+                               (Some 952479772)
+                               (Some 984654676)
+                               (Some 0).
+Definition file30188 := mkFile (Ext2FS 30188) 66736 true
+                               (Some 984677103) 
+                               (Some 952425102)
+                               (Some 984707102)
+                               (Some 984707102).
+Definition file30191 := mkFile (Ext2FS 30191) 60080 true
+                               (Some 984677352) 
+                               (Some 952452206)
+                               (Some 984707102)
+                               (Some 984707102).
+Definition file48284 := mkFile (Ext2FS 48284) 42736 true
+                               (Some 984677122)
+                               (Some 952425102)
+                               (Some 984707102)
+                               (Some 984707102).
+
 Lemma lee_honeynet_file:
   Timeline.isSound lee_timeline honeynet_image_a.
 Proof.
-  unfold isSound. intros pair H.
-
-  simpl in H.
-  repeat (destruct H; [
-    rewrite <- H; simpl; split; [ (* first event is on disk *)
-        try (apply verify_ext2_access); try (apply verify_ext2_modification);
-        try (apply verify_ext2_creation); try (apply verify_ext2_deletion);
-        vm_compute; reflexivity
-      | split; [ (* second event is on disk *)
-          try (apply verify_ext2_access); try (apply verify_ext2_modification);
-          try (apply verify_ext2_creation); try (apply verify_ext2_deletion);
-          vm_compute; reflexivity
-        | (* beforeOrConcurrent *)
-          reflexivity ]] |]).
-  contradict H.
-  Show Proof.
+  set (files := file23 :: file23 :: file30130 :: file30188 
+                :: file2056 :: file30191 :: file2055
+                :: file48284 :: file2057 :: file30131
+                :: file26121 :: file23 :: nil).
+  apply isSound_reflection with (files := files).
+  vm_compute. reflexivity.
 Qed.
 
 (* Turn this into a  Investigation of Computation of Forensics; it's easy to

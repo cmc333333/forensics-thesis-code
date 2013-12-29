@@ -1,3 +1,7 @@
+(* positive negative examples for what doesn't work and what does; e.g. coqchk
+*)
+
+
 Require Import Coq.ZArith.ZArith.
 
 Require Import ByteData.
@@ -6,6 +10,7 @@ Require Import FileData.
 Require Import FileSystems.
 Require Import Util.
 
+Open Local Scope bool.
 Open Local Scope Z.
 
 Inductive Event: Type :=
@@ -40,11 +45,11 @@ Definition timestampOf (event: Event) : Exc Z :=
 
 Definition beforeOrConcurrent (lhs rhs: Event) :=
   match (timestampOf lhs, timestampOf rhs) with
-  | (value lhs_time, value rhs_time) => lhs_time <= rhs_time
-  | _ => False
+  | (value lhs_time, value rhs_time) => lhs_time <=? rhs_time
+  | _ => false
   end.
 
-Definition foundOn (event: Event) (disk: Disk) : Prop :=
+Definition foundOn (event: Event) (disk: Disk) :=
   exists (file: File),
     isOnDisk file disk
     /\ match event with
@@ -58,24 +63,76 @@ Definition foundOn (event: Event) (disk: Disk) : Prop :=
           fs = file.(fileSystem) /\ file.(lastDeleted) = value timestamp
        end.
 
-Definition isInOrder (timeline: Timeline) :=
-  (* Events are in the correct sequence *)
-  let firstEvents := firstn (length timeline - 1) timeline in
-  let secondEvents := skipn 1 timeline in
-  let pairs := combine firstEvents secondEvents in
-  forall (pair: (Event*Event)),
-    In pair pairs -> beforeOrConcurrent (fst pair) (snd pair).
+Definition foundOn_compute (event: Event) (disk: Disk) (file: File) :=
+  isOnDisk_compute file disk
+  && match event with
+     | FileAccess timestamp fs =>
+        FileSystems.eqb fs file.(fileSystem)
+        && optZ_eqb file.(lastAccess) (value timestamp)
+     | FileModification timestamp fs =>
+        FileSystems.eqb fs file.(fileSystem)
+        && optZ_eqb file.(lastModification) (value timestamp)
+     | FileCreation timestamp fs =>
+        FileSystems.eqb fs file.(fileSystem)
+        && optZ_eqb file.(lastCreated) (value timestamp)
+     | FileDeletion timestamp fs =>
+        FileSystems.eqb fs file.(fileSystem)
+        && optZ_eqb file.(lastDeleted) (value timestamp)
+     end.
+
+Lemma foundOn_reflection (event: Event) (disk: Disk) (file: File) :
+  foundOn_compute event disk file = true -> foundOn event disk.
+Proof.
+  intros. unfold foundOn_compute in H. 
+  apply Bool.andb_true_iff in H. destruct H.
+  unfold foundOn. exists file.
+  split. apply isOnDisk_reflection. auto.
+  destruct event.
+    apply Bool.andb_true_iff in H0. destruct H0. 
+      split. apply FileSystems.eqb_reflection. auto.
+             apply optZ_eqb_reflection. auto.
+    apply Bool.andb_true_iff in H0. destruct H0. 
+      split. apply FileSystems.eqb_reflection. auto.
+             apply optZ_eqb_reflection. auto.
+    apply Bool.andb_true_iff in H0. destruct H0. 
+      split. apply FileSystems.eqb_reflection. auto.
+             apply optZ_eqb_reflection. auto.
+    apply Bool.andb_true_iff in H0. destruct H0. 
+      split. apply FileSystems.eqb_reflection. auto.
+             apply optZ_eqb_reflection. auto.
+Qed. 
+
+Definition isSoundPair (disk: Disk) (pair: ((Event*File)*(Event*File))) :=
+  match pair with
+  | ((lhsEvent, lhsFile), (rhsEvent, rhsFile)) =>
+      foundOn_compute lhsEvent disk lhsFile
+      && foundOn_compute rhsEvent disk rhsFile
+      && beforeOrConcurrent lhsEvent rhsEvent
+  end.
 
 Definition isSound (timeline: Timeline) (disk: Disk) :=
-  let pairs := combine timeline (skipn 1 timeline) in
-  forall (pair: (Event*Event)),
-    In pair pairs -> 
-      (foundOn (fst pair) disk)
-      /\ (foundOn (snd pair) disk)
-      /\ beforeOrConcurrent (fst pair) (snd pair).
-(*
-  (forall (event: Event),
-    (* Event is evident from the disk *)
-    (In event timeline) -> (foundOn event disk))
-  /\ isInOrder timeline.
-*)
+  exists (files: list File),
+    let eventFiles := combine timeline files in
+    let staggered := combine eventFiles (skipn 1 eventFiles) in
+    length eventFiles = length timeline
+    /\ forall (pair: ((Event*File)*(Event*File))),
+        In pair staggered -> isSoundPair disk pair = true.
+
+Definition isSound_compute (timeline: Timeline) (disk: Disk) 
+  (files: list File) :=
+  let eventFiles := combine timeline files in
+  let staggered := combine eventFiles (skipn 1 eventFiles) in
+  beq_nat (length eventFiles) (length timeline)
+  && forallb (isSoundPair disk) staggered.
+
+Lemma isSound_reflection (timeline: Timeline) (disk: Disk)
+  (files: list File) :
+  isSound_compute timeline disk files = true ->
+    isSound timeline disk.
+Proof.
+  intros. unfold isSound. exists files.
+  unfold isSound_compute in H.
+  apply Bool.andb_true_iff in H. destruct H. 
+  split. apply beq_nat_eq. auto.
+  apply forallb_forall. auto.
+Qed.
