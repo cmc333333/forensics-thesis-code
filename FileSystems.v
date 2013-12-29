@@ -18,18 +18,22 @@ Fixpoint eqb (lhs rhs: FileSystem) :=
 Lemma eqb_reflection (lhs rhs: FileSystem) :
   eqb lhs rhs = true -> lhs = rhs.
 Proof.
-  intros.
+  generalize rhs.
   induction lhs. 
     (* Ext2FS *)
-    destruct rhs; 
-      [ | contradict H; simpl; auto | contradict H; simpl; auto].
-    unfold eqb in H. apply Z.eqb_eq in H. rewrite H. reflexivity.
+    destruct rhs0; 
+      [| simpl; intros; inversion H | simpl; intros; inversion H].
+    unfold eqb. intros. apply Z.eqb_eq in H. rewrite H. reflexivity.
     (* TarFS *)
-    destruct rhs; 
-      [ contradict H; simpl; auto | | contradict H; simpl; auto].
-    admit.
+    destruct rhs0; 
+      [simpl; intros; inversion H | | simpl; intros; inversion H].
+      intros. unfold eqb in H. 
+      apply Bool.andb_true_iff in H. destruct H.
+      apply Z.eqb_eq in H0. rewrite H0.
+      apply IHlhs in H. rewrite H.
+      reflexivity.
     (* MockFS *)
-    destruct rhs; 
-      [ contradict H; simpl; auto | contradict H; simpl; auto | ].
-    unfold eqb in H. contradict H. auto.
+    destruct rhs0; 
+      [simpl; intros; inversion H | simpl; intros; inversion H | 
+       simpl; intros; inversion H].
 Qed.

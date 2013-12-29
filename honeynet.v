@@ -122,6 +122,9 @@ Proof.
   vm_compute. reflexivity.
 Qed.
 
+Definition maliciousFileName1 := ascii2Bytes "last/ssh".
+Definition maliciousFileName2 := ascii2Bytes "last/top".
+
 (* Turn this into a  Investigation of Computation of Forensics; it's easy to
 make definitions, but those don't work well because we need proof by reflexion
 
@@ -130,16 +133,9 @@ Reflection - makes tactics smaller; makes proof terms smaller
 Lemma borland_honeynet_file:
   borland_evidence honeynet_image_a gunzip_a.
   Proof.
-    set (file := mkFile (Ext2FS 23)
-                         520333
-                         true
-                        (Some 984707090)
-                        (Some 984706608)
-                        (Some 984707105)
-                        (Some 984707105)).
-    set (filename1 := (ascii2Bytes "last/ssh")).
-    set (filename2 := (ascii2Bytes "last/top")).
     apply borland_reflection 
-      with (file := file) (filename1 := filename1) (filename2 := filename2).
+      with (file := file23) 
+           (filename1 := maliciousFileName1) 
+           (filename2 := maliciousFileName2).
     vm_compute. reflexivity.
 Qed.

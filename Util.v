@@ -107,7 +107,19 @@ end.
 Lemma listZ_reflection (l r: list Z) :
   listZ_eqb l r = true -> l = r.
 Proof.
-  admit.
+  generalize r.
+  induction l.
+    destruct r0. 
+      reflexivity.
+      vm_compute. intros. inversion x.
+  intros.
+  destruct r0.
+    inversion H.
+  unfold listZ_eqb in H.
+  apply Bool.andb_true_iff in H. destruct H.
+  apply Z.eqb_eq in H. rewrite H.
+  apply IHl in H0. rewrite H0.
+  reflexivity.
 Qed.
 
 Definition optZ_eqb (lhs rhs: Exc Z) := match (lhs, rhs) with
