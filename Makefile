@@ -2,7 +2,7 @@ default:
 	coqc Fetch
 	coqc ByteData
 	coqc Util
-	coqc FileSystems
+	coqc FileIds
 	coqc File
 	coqc Ext2
 	coqc FileNames
@@ -10,7 +10,6 @@ default:
 	coqc FileTypes
 	coqc Tar
 	coqc Timeline
-	coqc Ext2Lemmas
 	coqc HoneynetDefinitions
 	coqc example_images
 

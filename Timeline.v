@@ -7,29 +7,29 @@ Require Import Coq.ZArith.ZArith.
 Require Import ByteData.
 Require Import File.
 Require Import FileData.
-Require Import FileSystems.
+Require Import FileIds.
 Require Import Util.
 
 Open Local Scope bool.
 Open Local Scope Z.
 
 Inductive Event: Type :=
-  | FileAccess: Z -> FileSystem -> Event
-  | FileModification: Z -> FileSystem -> Event
-  | FileCreation: Z -> FileSystem -> Event
-  | FileDeletion: Z -> FileSystem -> Event
+  | FileAccess: Z -> FileId -> Event
+  | FileModification: Z -> FileId -> Event
+  | FileCreation: Z -> FileId -> Event
+  | FileDeletion: Z -> FileId -> Event
 .
 
 Definition eqb (lhs rhs: Event) :=
   match (lhs, rhs) with
   | (FileAccess l lfs, FileAccess r rfs) => 
-      andb (FileSystems.eqb lfs rfs) (Z.eqb l r)
+      andb (FileIds.eqb lfs rfs) (Z.eqb l r)
   | (FileModification l lfs, FileModification r rfs) => 
-      andb (FileSystems.eqb lfs rfs) (Z.eqb l r)
+      andb (FileIds.eqb lfs rfs) (Z.eqb l r)
   | (FileCreation l lfs, FileCreation r rfs) =>
-      andb (FileSystems.eqb lfs rfs) (Z.eqb l r)
+      andb (FileIds.eqb lfs rfs) (Z.eqb l r)
   | (FileDeletion l lfs, FileDeletion r rfs) =>
-      andb (FileSystems.eqb lfs rfs) (Z.eqb l r)
+      andb (FileIds.eqb lfs rfs) (Z.eqb l r)
   | _ => false
   end.
 
@@ -54,29 +54,29 @@ Definition foundOn (event: Event) (disk: Disk) :=
     isOnDisk file disk
     /\ match event with
        | FileAccess timestamp fs =>
-          fs = file.(fileSystem) /\ file.(lastAccess) = value timestamp
+          fs = file.(fileId) /\ file.(lastAccess) = value timestamp
        | FileModification timestamp fs =>
-          fs = file.(fileSystem) /\ file.(lastModification) = value timestamp
+          fs = file.(fileId) /\ file.(lastModification) = value timestamp
        | FileCreation timestamp fs =>
-          fs = file.(fileSystem) /\ file.(lastCreated) = value timestamp
+          fs = file.(fileId) /\ file.(lastCreated) = value timestamp
        | FileDeletion timestamp fs =>
-          fs = file.(fileSystem) /\ file.(lastDeleted) = value timestamp
+          fs = file.(fileId) /\ file.(lastDeleted) = value timestamp
        end.
 
 Definition foundOn_compute (event: Event) (disk: Disk) (file: File) :=
   isOnDisk_compute file disk
   && match event with
      | FileAccess timestamp fs =>
-        FileSystems.eqb fs file.(fileSystem)
+        FileIds.eqb fs file.(fileId)
         && optZ_eqb file.(lastAccess) (value timestamp)
      | FileModification timestamp fs =>
-        FileSystems.eqb fs file.(fileSystem)
+        FileIds.eqb fs file.(fileId)
         && optZ_eqb file.(lastModification) (value timestamp)
      | FileCreation timestamp fs =>
-        FileSystems.eqb fs file.(fileSystem)
+        FileIds.eqb fs file.(fileId)
         && optZ_eqb file.(lastCreated) (value timestamp)
      | FileDeletion timestamp fs =>
-        FileSystems.eqb fs file.(fileSystem)
+        FileIds.eqb fs file.(fileId)
         && optZ_eqb file.(lastDeleted) (value timestamp)
      end.
 
@@ -89,16 +89,16 @@ Proof.
   split. apply isOnDisk_reflection. auto.
   destruct event.
     apply Bool.andb_true_iff in H0. destruct H0. 
-      split. apply FileSystems.eqb_reflection. auto.
+      split. apply FileIds.eqb_reflection. auto.
              apply optZ_eqb_reflection. auto.
     apply Bool.andb_true_iff in H0. destruct H0. 
-      split. apply FileSystems.eqb_reflection. auto.
+      split. apply FileIds.eqb_reflection. auto.
              apply optZ_eqb_reflection. auto.
     apply Bool.andb_true_iff in H0. destruct H0. 
-      split. apply FileSystems.eqb_reflection. auto.
+      split. apply FileIds.eqb_reflection. auto.
              apply optZ_eqb_reflection. auto.
     apply Bool.andb_true_iff in H0. destruct H0. 
-      split. apply FileSystems.eqb_reflection. auto.
+      split. apply FileIds.eqb_reflection. auto.
              apply optZ_eqb_reflection. auto.
 Qed. 
 

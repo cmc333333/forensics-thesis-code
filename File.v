@@ -2,14 +2,14 @@ Require Import Coq.ZArith.ZArith.
 
 Require Import ByteData.
 Require Import Fetch.
-Require Import FileSystems.
+Require Import FileIds.
 Require Import Util.
 
 Open Local Scope bool.
 Open Local Scope Z.
 
 Structure File := mkFile {
-  fileSystem: FileSystem;
+  fileId: FileId;
   fileSize: Z;
   deleted: bool;
   lastAccess: Exc Z;
@@ -22,7 +22,7 @@ Definition isDeleted (file: File) :=
   file.(deleted) = true.
 
 Definition eqb (lhs rhs: File) :=
-  (FileSystems.eqb lhs.(fileSystem) rhs.(fileSystem))
+  (FileIds.eqb lhs.(fileId) rhs.(fileId))
   && (lhs.(fileSize) =? rhs.(fileSize))
   && (Bool.eqb lhs.(deleted) rhs.(deleted))
   && (optZ_eqb lhs.(lastAccess) rhs.(lastAccess))

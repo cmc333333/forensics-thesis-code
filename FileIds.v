@@ -2,29 +2,29 @@ Require Import Coq.ZArith.ZArith.
 
 Require Import ByteData.
 
-Inductive FileSystem: Type :=
-  | Ext2FS: Z -> FileSystem
-  | TarFS: FileSystem -> Z -> FileSystem
-  | MockFS: ByteData -> FileSystem
+Inductive FileId: Type :=
+  | Ext2Id: Z -> FileId
+  | TarId: FileId -> Z -> FileId
+  | MockId: ByteData -> FileId
 .
 
-Fixpoint eqb (lhs rhs: FileSystem) :=
+Fixpoint eqb (lhs rhs: FileId) :=
   match (lhs, rhs) with
-  | ((Ext2FS l), (Ext2FS r)) => Z.eqb l r
-  | ((TarFS lfs l), (TarFS rfs r)) => (andb (eqb lfs rfs) (Z.eqb l r))
+  | ((Ext2Id l), (Ext2Id r)) => Z.eqb l r
+  | ((TarId lfs l), (TarId rfs r)) => (andb (eqb lfs rfs) (Z.eqb l r))
   | _ => false
   end.
 
-Lemma eqb_reflection (lhs rhs: FileSystem) :
+Lemma eqb_reflection (lhs rhs: FileId) :
   eqb lhs rhs = true -> lhs = rhs.
 Proof.
   generalize rhs.
   induction lhs. 
-    (* Ext2FS *)
+    (* Ext2Id *)
     destruct rhs0; 
       [| simpl; intros; inversion H | simpl; intros; inversion H].
     unfold eqb. intros. apply Z.eqb_eq in H. rewrite H. reflexivity.
-    (* TarFS *)
+    (* TarId *)
     destruct rhs0; 
       [simpl; intros; inversion H | | simpl; intros; inversion H].
       intros. unfold eqb in H. 
@@ -32,7 +32,7 @@ Proof.
       apply Z.eqb_eq in H0. rewrite H0.
       apply IHlhs in H. rewrite H.
       reflexivity.
-    (* MockFS *)
+    (* MockId *)
     destruct rhs0; 
       [simpl; intros; inversion H | simpl; intros; inversion H | 
        simpl; intros; inversion H].

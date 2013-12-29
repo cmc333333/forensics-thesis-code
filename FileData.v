@@ -4,15 +4,15 @@ Require Import ByteData.
 Require Import Ext2.
 Require Import Fetch.
 Require Import File.
-Require Import FileSystems.
+Require Import FileIds.
 
 Open Local Scope Z.
 
-Fixpoint fetchByteInner (fileSystem: FileSystem) (disk: Disk): Z->@Fetch Z :=
-  match fileSystem with
-  | Ext2FS inodeIndex => Ext2.fileByte disk inodeIndex
-  | TarFS fs shiftAmt => fetchByteInner fs (shift disk shiftAmt)
-  | MockFS data => data
+Fixpoint fetchByteInner (fileId: FileId) (disk: Disk): Z->@Fetch Z :=
+  match fileId with
+  | Ext2Id inodeIndex => Ext2.fileByte disk inodeIndex
+  | TarId fs shiftAmt => fetchByteInner fs (shift disk shiftAmt)
+  | MockId data => data
   end.
 
 (* Treat negative values as counting back from the end of a file 
@@ -21,7 +21,7 @@ Fixpoint fetchByte (file: File) (disk: Disk) (offset: Z): @Fetch Z :=
   let adjusted := if (offset <? 0) 
                   then (file.(fileSize) + offset)
                   else offset in
-  (fetchByteInner file.(fileSystem)) disk adjusted.
+  (fetchByteInner file.(fileId)) disk adjusted.
 
 (* Cleaner notation for file access. *)
 Notation "f @[ i | d ]" := (fetchByte f d i) (at level 60).
@@ -34,14 +34,14 @@ Definition isOnDiskTry1 (file: File) (disk: Disk) :=
     file @[ i | disk ] = disk (start + i).
 
 Definition isOnDisk (file: File) (disk: Disk) :=
-  match file.(fileSystem) with
-  | Ext2FS inodeIndex => (Ext2.findAndParseFile disk inodeIndex) = Found file
+  match file.(fileId) with
+  | Ext2Id inodeIndex => (Ext2.findAndParseFile disk inodeIndex) = Found file
   | _ => False
   end.
 
 Definition isOnDisk_compute (file: File) (disk: Disk) :=
-  match file.(fileSystem) with
-  | Ext2FS inodeIndex => File.feqb (Ext2.findAndParseFile disk inodeIndex)
+  match file.(fileId) with
+  | Ext2Id inodeIndex => File.feqb (Ext2.findAndParseFile disk inodeIndex)
                                   (Found file)
   | _ => false
   end.
@@ -51,6 +51,6 @@ Lemma isOnDisk_reflection (file: File) (disk: Disk) :
 Proof.
   intros.
   unfold isOnDisk_compute in H. unfold isOnDisk.
-  destruct (fileSystem file) ; [ | contradict H; auto | contradict H; auto].
+  destruct (fileId file) ; [ | contradict H; auto | contradict H; auto].
   apply feqb_reflection. auto.
 Qed.

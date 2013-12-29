@@ -427,7 +427,7 @@ Definition findAndParseFile (disk: Disk) (inodeIndex: Z)
   (parseDeleted disk superblock groupdesc inodeIndex)
     _fmap_ (fun deleted =>
     mkFile
-      (FileSystems.Ext2FS inodeIndex)
+      (FileIds.Ext2Id inodeIndex)
       inode.(size)
       deleted
       (value inode.(atime))
