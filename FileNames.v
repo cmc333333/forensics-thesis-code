@@ -28,6 +28,21 @@ Definition systemFile (fileName: ByteString) :=
                        :: "ssh" :: "rsync" :: "ProcMon.exe"
                        :: nil)).
 
+Definition systemFile_compute (fileName: ByteString) :=
+  existsb (listZ_eqb (trimFileNamePrefix fileName))
+          (map ascii2Bytes ("ps" :: "netstat" :: "top" :: "ifconfig" 
+                            :: "ssh" :: "rsync" :: "ProcMon.exe"
+                            :: nil)).
+
+Lemma systemFile_reflection (fileName: ByteString) :
+  systemFile_compute fileName = true -> systemFile fileName.
+Proof.
+  intros. unfold systemFile_compute in H. unfold systemFile.
+  apply existsb_exists in H. destruct H. destruct H.
+  apply listZ_reflection in H0. rewrite H0. auto.
+Qed.
+          
+
 Lemma systemFile_ex1 : 
   systemFile (ascii2Bytes "last/top").
 Proof.

@@ -38,3 +38,19 @@ Definition isOnDisk (file: File) (disk: Disk) :=
   | Ext2FS inodeIndex => (Ext2.findAndParseFile disk inodeIndex) = Found file
   | _ => False
   end.
+
+Definition isOnDisk_compute (file: File) (disk: Disk) :=
+  match file.(fileSystem) with
+  | Ext2FS inodeIndex => File.feqb (Ext2.findAndParseFile disk inodeIndex)
+                                  (Found file)
+  | _ => false
+  end.
+
+Lemma isOnDisk_reflection (file: File) (disk: Disk) :
+  (isOnDisk_compute file disk) = true -> (isOnDisk file disk).
+Proof.
+  intros.
+  unfold isOnDisk_compute in H. unfold isOnDisk.
+  destruct (fileSystem file) ; [ | contradict H; auto | contradict H; auto].
+  apply feqb_reflection. auto.
+Qed.

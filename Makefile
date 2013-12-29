@@ -11,6 +11,7 @@ default:
 	coqc Tar
 	coqc Timeline
 	coqc Ext2Lemmas
+	coqc HoneynetDefinitions
 	coqc example_images
 
 clean:

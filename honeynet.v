@@ -10,6 +10,7 @@ Require Import FileData.
 Require Import FileNames.
 Require Import FileSystems.
 Require Import FileTypes.
+Require Import HoneynetDefinitions.
 Require Import Tar.
 Require Import Timeline.
 Require Import Util.
@@ -75,16 +76,18 @@ Proof.
           try (apply verify_ext2_creation); try (apply verify_ext2_deletion);
           vm_compute; reflexivity
         | (* beforeOrConcurrent *)
-          unfold beforeOrConcurrent; simpl; omega ]] |]).
+          reflexivity ]] |]).
   contradict H.
+  Show Proof.
 Qed.
 
+(* Turn this into a  Investigation of Computation of Forensics; it's easy to
+make definitions, but those don't work well because we need proof by reflexion
+
+Reflection - makes tactics smaller; makes proof terms smaller
+*)
 Lemma borland_honeynet_file:
-  exists f: File,
-  isOnDisk f honeynet_image_a
-  /\ isDeleted f
-  /\ isGzip f honeynet_image_a
-  /\ Tar.looksLikeRootkit (gunzip_a f) honeynet_image_a.
+  borland_evidence honeynet_image_a gunzip_a.
   Proof.
     set (file := mkFile (Ext2FS 23)
                          520333
@@ -93,27 +96,9 @@ Lemma borland_honeynet_file:
                         (Some 984706608)
                         (Some 984707105)
                         (Some 984707105)).
-    exists file.
-    split. vm_compute. reflexivity.
-    Show Proof.
-    split. reflexivity.
-    Show Proof.
-    split. vm_compute. repeat (split ; [reflexivity| ]); reflexivity.
-    Show Proof.
-    unfold looksLikeRootkit.
-    exists (ascii2Bytes "last/ssh"); exists (ascii2Bytes "last/top").
-    Show Proof.
-    set (fileNames := parseFileNames (gunzip_a file) honeynet_image_a).
-    vm_compute in fileNames.
-    Show Proof.
-    split. vm_compute. reflexivity.
-    Show Proof.
-    split. vm_compute. reflexivity.
-    Show Proof.
-    split. vm_compute. repeat (try (left; reflexivity); right).
-    Show Proof.
-    split. vm_compute. repeat (try (left; reflexivity); right).
-    Show Proof.
+    set (filename1 := (ascii2Bytes "last/ssh")).
+    set (filename2 := (ascii2Bytes "last/top")).
+    apply borland_reflection 
+      with (file := file) (filename1 := filename1) (filename2 := filename2).
     vm_compute. reflexivity.
-    Show Proof.
 Qed.

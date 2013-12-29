@@ -8,6 +8,7 @@ Require Import FileData.
 Require Import FileNames.
 Require Import Util.
 
+Local Open Scope bool.
 Local Open Scope Z.
 
 Definition ByteString := list Z.
@@ -78,3 +79,30 @@ Definition looksLikeRootkit (file: File) (disk: Disk) :=
     /\ (FileNames.systemFile filename1)
     /\ (FileNames.systemFile filename2)
     /\ (listZ_eqb filename1 filename2) = false.
+
+Definition looksLikeRootkit_compute (file: File) (disk: Disk)
+  (filename1 filename2: ByteString) :=
+     (existsb (listZ_eqb filename1) (parseFileNames file disk))
+  && (existsb (listZ_eqb filename2) (parseFileNames file disk))
+  && (FileNames.systemFile_compute filename1)
+  && (FileNames.systemFile_compute filename2)
+  && (negb (listZ_eqb filename1 filename2)).
+
+Lemma looksLikeRootkit_reflection (file: File) (disk: Disk)
+  (filename1 filename2: ByteString) :
+  looksLikeRootkit_compute file disk filename1 filename2 = true
+    -> looksLikeRootkit file disk.
+Proof.
+  intros. unfold looksLikeRootkit_compute in H. 
+  unfold looksLikeRootkit.
+  apply Bool.andb_true_iff in H. destruct H.
+  apply Bool.andb_true_iff in H. destruct H.
+  apply Bool.andb_true_iff in H. destruct H.
+  apply Bool.andb_true_iff in H. destruct H.
+  exists filename1. exists filename2.
+  split. auto.
+  split. auto.
+  split. apply systemFile_reflection. auto.
+  split. apply systemFile_reflection. auto.
+  apply Bool.negb_true_iff in H0. auto.
+Qed.
