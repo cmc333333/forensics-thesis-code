@@ -1,3 +1,5 @@
+Require Import Coq.Strings.String.
+
 Require Import ByteData.
 Require Import File.
 Require Import FileData.
@@ -14,14 +16,14 @@ Definition borland_rootkit (disk: Disk) (gunzip: File->File) :=
     /\ Tar.looksLikeRootkit (gunzip file) disk.
 
 Definition borland_compute (disk: Disk) (gunzip: File->File)
-  (file: File) (filename1 filename2: ByteString) :=
+  (file: File) (filename1 filename2: string) :=
   (isOnDisk_compute file disk)
   && file.(deleted)
   && (isGzip_compute file disk)
   && Tar.looksLikeRootkit_compute (gunzip file) disk filename1 filename2.
 
 Lemma borland_reflection (disk: Disk) (gunzip: File->File)
-  (file: File) (filename1 filename2: ByteString) :
+  (file: File) (filename1 filename2: string) :
   borland_compute disk gunzip file filename1 filename2 = true
     -> borland_rootkit disk gunzip.
 Proof.

@@ -1,5 +1,6 @@
 default:
 	coqc Fetch
+	coqc StringOps
 	coqc ByteData
 	coqc Util
 	coqc FileIds

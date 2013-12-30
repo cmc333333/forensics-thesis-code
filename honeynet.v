@@ -1,4 +1,5 @@
 Require Import Coq.Lists.List.
+Require Import Coq.Strings.String.
 Require Import Coq.ZArith.ZArith.
 
 Require Import ByteData.
@@ -17,6 +18,7 @@ Require Import Util.
 Require Import example_images.
 
 Open Local Scope Z.
+Open Local Scope string.
 
 Definition honeynet_image_a : Disk := honeynet_map.
 (* All gunzip operations return the file mentioned *)
@@ -121,8 +123,8 @@ Proof.
   vm_compute. reflexivity.
 Qed.
 
-Definition maliciousFileName1 := ascii2Bytes "last/ssh".
-Definition maliciousFileName2 := ascii2Bytes "last/top".
+Definition maliciousFileName1 := "last/ssh".
+Definition maliciousFileName2 := "last/top".
 
 (* Turn this into a  Investigation of Computation of Forensics; it's easy to
 make definitions, but those don't work well because we need proof by reflexion

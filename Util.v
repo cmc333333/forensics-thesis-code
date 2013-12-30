@@ -154,19 +154,3 @@ Proof.
     destruct rhs; [discriminate H|]. auto.
 Qed.
  
-Definition ascii_eqb (lhs rhs: ascii) : bool :=
-  match (lhs, rhs) with
-  | (Ascii l1 l2 l3 l4 l5 l6 l7 l8, Ascii r1 r2 r3 r4 r5 r6 r7 r8) =>
-      (Bool.eqb l1 r1) && (Bool.eqb l2 r2)
-      && (Bool.eqb l3 r3) && (Bool.eqb l4 r4)
-      && (Bool.eqb l5 r5) && (Bool.eqb l6 r6)
-      && (Bool.eqb l7 r7) && (Bool.eqb l8 r8)
-  end.
-
-Fixpoint string_eqb (lhs rhs: string) :=
-  match (lhs, rhs) with
-  | (EmptyString, EmptyString) => true
-  | (String l ltail, String r rtail) =>
-      (ascii_eqb l r) && (string_eqb ltail rtail)
-  | _ => false
-  end.
