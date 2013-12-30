@@ -73,9 +73,10 @@ Definition parseFileNames (file: File) (disk: Disk): list (list Z) :=
   file.(fileSize).
 
 Definition looksLikeRootkit (file: File) (disk: Disk) :=
+  let parsed := parseFileNames file disk in
   exists (filename1 filename2: ByteString),
-    (existsb (listZ_eqb filename1) (parseFileNames file disk)) = true
-    /\ (existsb (listZ_eqb filename2) (parseFileNames file disk)) = true
+    In filename1 parsed
+    /\ In filename2 parsed
     /\ (FileNames.systemFile filename1)
     /\ (FileNames.systemFile filename2)
     /\ (listZ_eqb filename1 filename2) = false.
@@ -100,8 +101,12 @@ Proof.
   apply Bool.andb_true_iff in H. destruct H.
   apply Bool.andb_true_iff in H. destruct H.
   exists filename1. exists filename2.
-  split. auto.
-  split. auto.
+  split. 
+    apply existsb_exists in H. destruct H. destruct H.
+    apply listZ_reflection in H4. rewrite <- H4 in H. auto.
+  split. 
+    apply existsb_exists in H3. destruct H3. destruct H3.
+    apply listZ_reflection in H4. rewrite <- H4 in H3. auto.
   split. apply systemFile_reflection. auto.
   split. apply systemFile_reflection. auto.
   apply Bool.negb_true_iff in H0. auto.
