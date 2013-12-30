@@ -104,22 +104,39 @@ Fixpoint listZ_eqb (l r: list Z) := match (l, r) with
   | (_, _) => false
 end.
 
-Lemma listZ_reflection (l r: list Z) :
-  listZ_eqb l r = true -> l = r.
+Lemma listZ_eqb_reflection (l r: list Z) :
+  listZ_eqb l r = true <-> l = r.
 Proof.
-  generalize r.
-  induction l.
-    destruct r0. 
+  split. (* -> *)
+    generalize r.
+    induction l.
+      destruct r0. 
+        reflexivity.
+        vm_compute. intros. inversion x.
+    intros.
+    destruct r0.
+      inversion H.
+
+      unfold listZ_eqb in H.
+      apply Bool.andb_true_iff in H. destruct H.
+      apply Z.eqb_eq in H. rewrite H.
+      apply IHl in H0. rewrite H0.
       reflexivity.
-      vm_compute. intros. inversion x.
-  intros.
-  destruct r0.
-    inversion H.
-  unfold listZ_eqb in H.
-  apply Bool.andb_true_iff in H. destruct H.
-  apply Z.eqb_eq in H. rewrite H.
-  apply IHl in H0. rewrite H0.
-  reflexivity.
+  (* <- *)
+    generalize r.
+    induction l.
+      destruct r0. 
+        reflexivity.
+        intros. inversion H.
+    intros.
+    destruct r0.
+      inversion H.
+      
+      unfold listZ_eqb. apply Bool.andb_true_iff.
+      inversion H.
+      split.
+        apply Z.eqb_eq. reflexivity.
+        rewrite <- H2 at 1. apply IHl in H2. auto.
 Qed.
 
 Definition optZ_eqb (lhs rhs: Exc Z) := match (lhs, rhs) with

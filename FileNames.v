@@ -39,7 +39,7 @@ Lemma systemFile_reflection (fileName: ByteString) :
 Proof.
   intros. unfold systemFile_compute in H. unfold systemFile.
   apply existsb_exists in H. destruct H. destruct H.
-  apply listZ_reflection in H0. rewrite H0. auto.
+  apply listZ_eqb_reflection in H0. rewrite H0. auto.
 Qed.
           
 

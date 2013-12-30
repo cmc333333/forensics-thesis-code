@@ -79,7 +79,7 @@ Definition looksLikeRootkit (file: File) (disk: Disk) :=
     /\ In filename2 parsed
     /\ (FileNames.systemFile filename1)
     /\ (FileNames.systemFile filename2)
-    /\ (listZ_eqb filename1 filename2) = false.
+    /\ filename1 <> filename2.
 
 Definition looksLikeRootkit_compute (file: File) (disk: Disk)
   (filename1 filename2: ByteString) :=
@@ -103,11 +103,13 @@ Proof.
   exists filename1. exists filename2.
   split. 
     apply existsb_exists in H. destruct H. destruct H.
-    apply listZ_reflection in H4. rewrite <- H4 in H. auto.
+    apply listZ_eqb_reflection in H4. rewrite <- H4 in H. auto.
   split. 
     apply existsb_exists in H3. destruct H3. destruct H3.
-    apply listZ_reflection in H4. rewrite <- H4 in H3. auto.
+    apply listZ_eqb_reflection in H4. rewrite <- H4 in H3. auto.
   split. apply systemFile_reflection. auto.
   split. apply systemFile_reflection. auto.
-  apply Bool.negb_true_iff in H0. auto.
+
+  compute. intros. apply <- listZ_eqb_reflection in H4.
+  rewrite H4 in H0. discriminate H0.
 Qed.
