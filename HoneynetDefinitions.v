@@ -6,24 +6,24 @@ Require Import Tar.
 
 Open Local Scope bool.
 
-Definition borland_rootkit (disk: Disk) (unzip: File->File) :=
+Definition borland_rootkit (disk: Disk) (gunzip: File->File) :=
   exists file: File,
     isOnDisk file disk
     /\ isDeleted file
     /\ isGzip file disk
-    /\ Tar.looksLikeRootkit (unzip file) disk.
+    /\ Tar.looksLikeRootkit (gunzip file) disk.
 
-Definition borland_compute (disk: Disk) (unzip: File->File)
+Definition borland_compute (disk: Disk) (gunzip: File->File)
   (file: File) (filename1 filename2: ByteString) :=
   (isOnDisk_compute file disk)
   && file.(deleted)
   && (isGzip_compute file disk)
-  && Tar.looksLikeRootkit_compute (unzip file) disk filename1 filename2.
+  && Tar.looksLikeRootkit_compute (gunzip file) disk filename1 filename2.
 
-Lemma borland_reflection (disk: Disk) (unzip: File->File)
+Lemma borland_reflection (disk: Disk) (gunzip: File->File)
   (file: File) (filename1 filename2: ByteString) :
-  borland_compute disk unzip file filename1 filename2 = true
-    -> borland_rootkit disk unzip.
+  borland_compute disk gunzip file filename1 filename2 = true
+    -> borland_rootkit disk gunzip.
 Proof.
   intros. unfold borland_compute in H.
   apply Bool.andb_true_iff in H. destruct H.

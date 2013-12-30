@@ -35,7 +35,8 @@ Definition isOnDiskTry1 (file: File) (disk: Disk) :=
 
 Definition isOnDisk (file: File) (disk: Disk) :=
   match file.(fileId) with
-  | Ext2Id inodeIndex => (Ext2.findAndParseFile disk inodeIndex) = Found file
+  | Ext2Id inodeIndex => 
+    (Ext2.findAndParseFile disk inodeIndex) = Found file
   | _ => False
   end.
 
