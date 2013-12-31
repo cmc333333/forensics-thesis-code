@@ -11,31 +11,31 @@ Require Import FileIds.
 Require Import Util.
 
 Open Local Scope bool.
-Open Local Scope Z.
+Open Local Scope N.
 
 Inductive Event: Type :=
-  | FileAccess: Z -> FileId -> Event
-  | FileModification: Z -> FileId -> Event
-  | FileCreation: Z -> FileId -> Event
-  | FileDeletion: Z -> FileId -> Event
+  | FileAccess: N -> FileId -> Event
+  | FileModification: N -> FileId -> Event
+  | FileCreation: N -> FileId -> Event
+  | FileDeletion: N -> FileId -> Event
 .
 
 Definition eqb (lhs rhs: Event) :=
   match (lhs, rhs) with
   | (FileAccess l lfs, FileAccess r rfs) => 
-      andb (FileIds.eqb lfs rfs) (Z.eqb l r)
+      andb (FileIds.eqb lfs rfs) (N.eqb l r)
   | (FileModification l lfs, FileModification r rfs) => 
-      andb (FileIds.eqb lfs rfs) (Z.eqb l r)
+      andb (FileIds.eqb lfs rfs) (N.eqb l r)
   | (FileCreation l lfs, FileCreation r rfs) =>
-      andb (FileIds.eqb lfs rfs) (Z.eqb l r)
+      andb (FileIds.eqb lfs rfs) (N.eqb l r)
   | (FileDeletion l lfs, FileDeletion r rfs) =>
-      andb (FileIds.eqb lfs rfs) (Z.eqb l r)
+      andb (FileIds.eqb lfs rfs) (N.eqb l r)
   | _ => false
   end.
 
 Definition Timeline: Type := list Event.
 
-Definition timestampOf (event: Event) : Exc Z :=
+Definition timestampOf (event: Event) : Exc N :=
   match event with
   | FileAccess timestamp _ => value timestamp
   | FileModification timestamp _ => value timestamp
@@ -68,16 +68,16 @@ Definition foundOn_compute (event: Event) (disk: Disk) (file: File) :=
   && match event with
      | FileAccess timestamp fs =>
         FileIds.eqb fs file.(fileId)
-        && optZ_eqb file.(lastAccess) (value timestamp)
+        && optN_eqb file.(lastAccess) (value timestamp)
      | FileModification timestamp fs =>
         FileIds.eqb fs file.(fileId)
-        && optZ_eqb file.(lastModification) (value timestamp)
+        && optN_eqb file.(lastModification) (value timestamp)
      | FileCreation timestamp fs =>
         FileIds.eqb fs file.(fileId)
-        && optZ_eqb file.(lastCreated) (value timestamp)
+        && optN_eqb file.(lastCreated) (value timestamp)
      | FileDeletion timestamp fs =>
         FileIds.eqb fs file.(fileId)
-        && optZ_eqb file.(lastDeleted) (value timestamp)
+        && optN_eqb file.(lastDeleted) (value timestamp)
      end.
 
 Lemma foundOn_reflection (event: Event) (disk: Disk) (file: File) :
@@ -90,16 +90,16 @@ Proof.
   destruct event.
     apply Bool.andb_true_iff in H0. destruct H0. 
       split. apply FileIds.eqb_reflection. auto.
-             apply optZ_eqb_reflection. auto.
+             apply optN_eqb_reflection. auto.
     apply Bool.andb_true_iff in H0. destruct H0. 
       split. apply FileIds.eqb_reflection. auto.
-             apply optZ_eqb_reflection. auto.
+             apply optN_eqb_reflection. auto.
     apply Bool.andb_true_iff in H0. destruct H0. 
       split. apply FileIds.eqb_reflection. auto.
-             apply optZ_eqb_reflection. auto.
+             apply optN_eqb_reflection. auto.
     apply Bool.andb_true_iff in H0. destruct H0. 
       split. apply FileIds.eqb_reflection. auto.
-             apply optZ_eqb_reflection. auto.
+             apply optN_eqb_reflection. auto.
 Qed. 
 
 Definition isSoundPair (disk: Disk) (pair: ((Event*File)*(Event*File))) :=

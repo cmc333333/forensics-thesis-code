@@ -1,3 +1,4 @@
+Require Import Coq.Strings.Ascii.
 Require Import Coq.ZArith.ZArith.
 
 Require Import ByteData.
@@ -5,20 +6,21 @@ Require Import Fetch.
 Require Import File.
 Require Import FileData.
 
-Open Local Scope bool.
-Open Local Scope Z.
+Local Open Scope bool.
+Local Open Scope char.
+Local Open Scope N.
 
 Definition isJpeg (file: File) (disk: Disk) :=
-     file @[  0 | disk ] = Found 255
-  /\ file @[  1 | disk ] = Found 216 
-  /\ file @[ -2 | disk ] = Found 255
-  /\ file @[ -1 | disk ] = Found 217.
+     file @[  0 | disk ] = Found "255"
+  /\ file @[  1 | disk ] = Found "216"
+  /\ file @[- 2 | disk ] = Found "255"
+  /\ file @[- 1 | disk ] = Found "217".
 
 Definition isJpeg_compute (file: File) (disk: Disk) :=
-     Z_feqb (file @[  0 | disk ]) (Found 255)
-  && Z_feqb (file @[  1 | disk ]) (Found 216)
-  && Z_feqb (file @[ -2 | disk ]) (Found 255)
-  && Z_feqb (file @[ -1 | disk ]) (Found 217).
+     Byte.feqb (file @[  0 | disk ]) (Found "255")
+  && Byte.feqb (file @[  1 | disk ]) (Found "216")
+  && Byte.feqb (file @[- 2 | disk ]) (Found "255")
+  && Byte.feqb (file @[- 1 | disk ]) (Found "217").
 
 Lemma isJpeg_reflection (file: File) (disk: Disk) :
   isJpeg_compute file disk = true -> isJpeg file disk.
@@ -28,21 +30,21 @@ Proof.
   apply Bool.andb_true_iff in H. destruct H.
   apply Bool.andb_true_iff in H. destruct H.
 
-  split. apply Z_feqb_reflection. auto.
-  split. apply Z_feqb_reflection. auto.
-  split. apply Z_feqb_reflection. auto.
-  apply Z_feqb_reflection. auto.
+  split. apply Byte.feqb_reflection. auto.
+  split. apply Byte.feqb_reflection. auto.
+  split. apply Byte.feqb_reflection. auto.
+  apply Byte.feqb_reflection. auto.
 Qed.
 
 Definition isGzip (file: File) (disk: Disk) :=
-     file @[ 0 | disk ] = Found 31
-  /\ file @[ 1 | disk ] = Found 139 
-  /\ file @[ 2 | disk ] = Found 8.
+     file @[ 0 | disk ] = Found "031"
+  /\ file @[ 1 | disk ] = Found "139" 
+  /\ file @[ 2 | disk ] = Found "008".
 
 Definition isGzip_compute (file: File) (disk: Disk) :=
-     Z_feqb (file @[ 0 | disk ]) (Found 31)
-  && Z_feqb (file @[ 1 | disk ]) (Found 139)
-  && Z_feqb (file @[ 2 | disk ]) (Found 8).
+     Byte.feqb (file @[ 0 | disk ]) (Found "031")
+  && Byte.feqb (file @[ 1 | disk ]) (Found "139")
+  && Byte.feqb (file @[ 2 | disk ]) (Found "008").
 
 Lemma isGzip_reflection (file: File) (disk: Disk) :
   isGzip_compute file disk = true -> isGzip file disk.
@@ -51,22 +53,22 @@ Proof.
   apply Bool.andb_true_iff in H. destruct H.
   apply Bool.andb_true_iff in H. destruct H.
 
-  split. apply Z_feqb_reflection. auto.
-  split. apply Z_feqb_reflection. auto.
-  apply Z_feqb_reflection. auto.
+  split. apply Byte.feqb_reflection. auto.
+  split. apply Byte.feqb_reflection. auto.
+  apply Byte.feqb_reflection. auto.
 Qed.
 
 Definition isElf (file: File) (disk: Disk) :=
-     file @[ 0 | disk ] = Found 127
-  /\ file @[ 1 | disk ] = Found 69 
-  /\ file @[ 2 | disk ] = Found 76
-  /\ file @[ 3 | disk ] = Found 70.
+     file @[ 0 | disk ] = Found "127"
+  /\ file @[ 1 | disk ] = Found "e"
+  /\ file @[ 2 | disk ] = Found "l"
+  /\ file @[ 3 | disk ] = Found "f".
 
 Definition isElf_compute (file: File) (disk: Disk) :=
-     Z_feqb (file @[ 0 | disk ]) (Found 127)
-  && Z_feqb (file @[ 1 | disk ]) (Found 69)
-  && Z_feqb (file @[ 2 | disk ]) (Found 76)
-  && Z_feqb (file @[ 3 | disk ]) (Found 70).
+     Byte.feqb (file @[ 0 | disk ]) (Found "127")
+  && Byte.feqb (file @[ 1 | disk ]) (Found "e")
+  && Byte.feqb (file @[ 2 | disk ]) (Found "l")
+  && Byte.feqb (file @[ 3 | disk ]) (Found "f").
 
 Lemma isElf_reflection (file: File) (disk: Disk) :
   isElf_compute file disk = true -> isElf file disk.
@@ -76,10 +78,10 @@ Proof.
   apply Bool.andb_true_iff in H. destruct H.
   apply Bool.andb_true_iff in H. destruct H.
 
-  split. apply Z_feqb_reflection. auto.
-  split. apply Z_feqb_reflection. auto.
-  split. apply Z_feqb_reflection. auto.
-  apply Z_feqb_reflection. auto.
+  split. apply Byte.feqb_reflection. auto.
+  split. apply Byte.feqb_reflection. auto.
+  split. apply Byte.feqb_reflection. auto.
+  apply Byte.feqb_reflection. auto.
 Qed.
 
 

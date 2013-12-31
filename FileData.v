@@ -1,14 +1,15 @@
 Require Import Coq.ZArith.ZArith.
 
+Require Import Byte.
 Require Import ByteData.
 Require Import Ext2.
 Require Import Fetch.
 Require Import File.
 Require Import FileIds.
 
-Open Local Scope Z.
+Local Open Scope N.
 
-Fixpoint fetchByteInner (fileId: FileId) (disk: Disk): Z->@Fetch Z :=
+Fixpoint fetchByteInner (fileId: FileId) (disk: Disk): N->@Fetch Byte :=
   match fileId with
   | Ext2Id inodeIndex => Ext2.fileByte disk inodeIndex
   | TarId fs shiftAmt => fetchByteInner fs (shift disk shiftAmt)
@@ -17,20 +18,21 @@ Fixpoint fetchByteInner (fileId: FileId) (disk: Disk): Z->@Fetch Z :=
 
 (* Treat negative values as counting back from the end of a file 
    (a la Python) *)
-Fixpoint fetchByte (file: File) (disk: Disk) (offset: Z): @Fetch Z := 
-  let adjusted := if (offset <? 0) 
-                  then (file.(fileSize) + offset)
-                  else offset in
-  (fetchByteInner file.(fileId)) disk adjusted.
+Fixpoint fetchByte (file: File) (disk: Disk) (offset: N): @Fetch Byte := 
+  (fetchByteInner file.(fileId)) disk offset.
 
 (* Cleaner notation for file access. *)
 Notation "f @[ i | d ]" := (fetchByte f d i) (at level 60).
-
+Notation "f @[- i | d ]" := 
+    (fetchByte f d (Z.to_N ((Z.opp (Z.of_N i))
+                            mod 
+                            (Z.of_N f.(fileSize))))) 
+    (at level 60).
 
 
 Definition isOnDiskTry1 (file: File) (disk: Disk) :=
-  exists (start: Z), forall (i: Z),
-  (i >= 0 /\ i < file.(fileSize)) ->
+  exists (start: N), forall (i: N),
+  i < file.(fileSize) ->
     file @[ i | disk ] = disk (start + i).
 
 Definition isOnDisk (file: File) (disk: Disk) :=

@@ -2,11 +2,11 @@ Require Import Coq.Strings.String.
 Require Import Coq.ZArith.ZArith.
 Require Export List.
 
-Open Local Scope Z.
+Local Open Scope N.
 
 Inductive Fetch {A:Type}: Type :=
   | Found: A -> Fetch
-  | MissingAt: Z -> Fetch
+  | MissingAt: N -> Fetch
   | ErrorString: string -> Fetch
 .
 
@@ -49,16 +49,16 @@ Definition eqb {T:Type} (lhs rhs: @Fetch T) (t_eqb: T->T->bool) :=
   | (_, _) => false
   end.
 
-Definition Z_feqb (lhs rhs: @Fetch Z) := eqb lhs rhs Z.eqb.
+Definition N_feqb (lhs rhs: @Fetch N) := eqb lhs rhs N.eqb.
 
-Lemma Z_feqb_reflection (lhs rhs: @Fetch Z):
-  Z_feqb lhs rhs = true -> lhs = rhs.
+Lemma N_feqb_reflection (lhs rhs: @Fetch N):
+  N_feqb lhs rhs = true -> lhs = rhs.
 Proof.
-  intros. unfold Z_feqb in H. unfold eqb in H.
+  intros. unfold N_feqb in H. unfold eqb in H.
   destruct lhs.
     destruct rhs; [| discriminate H | discriminate H]. 
-      apply Z.eqb_eq in H. rewrite H. reflexivity.
+      apply N.eqb_eq in H. rewrite H. reflexivity.
     destruct rhs; [discriminate H | | discriminate H].
-      apply Z.eqb_eq in H. rewrite H. reflexivity.
+      apply N.eqb_eq in H. rewrite H. reflexivity.
     discriminate H.
 Qed.

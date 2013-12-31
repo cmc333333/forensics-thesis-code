@@ -1,5 +1,6 @@
 default:
 	coqc Fetch
+	coqc Byte
 	coqc StringOps
 	coqc ByteData
 	coqc Util

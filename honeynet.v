@@ -17,13 +17,13 @@ Require Import Util.
 
 Require Import example_images.
 
-Open Local Scope Z.
-Open Local Scope string.
+Local Open Scope N.
+Local Open Scope string.
 
 Definition honeynet_image_a : Disk := honeynet_map.
 (* All gunzip operations return the file mentioned *)
 Definition gunzip_a := (fun (input: File) => 
-  let asDisk := Disk_of_Map_Z_Z gunzipped_23 in
+  let asDisk := Disk_of_Map_N_Byte gunzipped_23 in
   (mkFile (FileIds.MockId asDisk)
           1454080 (* uncompressed file size *)
           input.(deleted) 
@@ -131,6 +131,7 @@ make definitions, but those don't work well because we need proof by reflexion
 
 Reflection - makes tactics smaller; makes proof terms smaller
 *)
+
 Lemma borland_honeynet_file:
   borland_rootkit honeynet_image_a gunzip_a.
   Proof.

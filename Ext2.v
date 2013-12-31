@@ -1,70 +1,74 @@
+Require Import Coq.Strings.Ascii.
+Require Import Coq.Strings.String.
 Require Import Coq.ZArith.ZArith.
 
+Require Import Byte.
 Require Import ByteData.
 Require Import Fetch.
 Require Import File.
+Require Import StringOps.
 Require Import Util.
 
-Open Local Scope Z.
+Local Open Scope N.
 
 (* Field names based on http://www.nongnu.org/ext2-doc/ext2.html *)
 
 (* Block Address will come up again and again *)
-Definition BA := Z.
+Definition BA := N.
 
 
 (* ======= SuperBlock ======= *)
 Structure SuperBlock := mkSuperBlock {
-  inodesCount: Z;
-  blocksCount: Z;
-  rBlocksCount: Z;
-  freeBlocksCount: Z;
-  freeInodesCount: Z;
+  inodesCount: N;
+  blocksCount: N;
+  rBlocksCount: N;
+  freeBlocksCount: N;
+  freeInodesCount: N;
   firstDataBlock: BA;
-  logBlockSize: Z;
-  logFragSize: Z;
-  blocksPerGroup: Z;
-  fragsPerGroup: Z;
-  inodesPerGroup: Z;
-  mTime: Z;
-  wTime: Z;
-  mntCount: Z;
-  maxMntCount: Z;
-  magic: Z;
-  state: Z;
-  errors: Z;
-  minorRevLevel: Z;
-  lastCheck: Z;
-  checkinterval: Z;
-  creatorOS: Z;
-  revLevel: Z;
-  defResuid: Z;
-  defResgid: Z;
+  logBlockSize: N;
+  logFragSize: N;
+  blocksPerGroup: N;
+  fragsPerGroup: N;
+  inodesPerGroup: N;
+  mTime: N;
+  wTime: N;
+  mntCount: N;
+  maxMntCount: N;
+  magic: N;
+  state: N;
+  errors: N;
+  minorRevLevel: N;
+  lastCheck: N;
+  checkinterval: N;
+  creatorOS: N;
+  revLevel: N;
+  defResuid: N;
+  defResgid: N;
   (* EXT2_DYNAMIC_REV Specific *)
-  firstIno: Z;
-  inodeSize: Z;
-  blockGroupNr: Z;
-  featureCompat: Z;
-  featureIncompat: Z;
-  featureROCompat: Z;
-  uuid: list Z;
-  volumeName: list Z;
-  lastMounted: list Z;
-  algoBitmap: Z;
+  firstIno: N;
+  inodeSize: N;
+  blockGroupNr: N;
+  featureCompat: N;
+  featureIncompat: N;
+  featureROCompat: N;
+  uuid: list Byte;
+  volumeName: string;
+  lastMounted: string;
+  algoBitmap: N;
   (* Performance Hints *)
-  preallocBlocks: Z;
-  preallocDirBlocks: Z;
+  preallocBlocks: N;
+  preallocDirBlocks: N;
   (* Journaling Support *)
-  journalUUID: Z;
-  journalInum: Z;
-  journalDev: Z;
-  lastOrphan: Z;
+  journalUUID: N;
+  journalInum: N;
+  journalDev: N;
+  lastOrphan: N;
   (* Directory Indexing Support *)
-  hashSeed: Z;
-  defHashVersion: Z;
+  hashSeed: N;
+  defHashVersion: N;
   (* Other options *)
-  defaultMountOptions: Z;
-  firstMetaBg: Z
+  defaultMountOptions: N;
+  firstMetaBg: N
 }.
 
 Definition findAndParseSuperBlock (disk: Disk): @Fetch SuperBlock :=
@@ -147,23 +151,23 @@ Definition findAndParseSuperBlock (disk: Disk): @Fetch SuperBlock :=
       featureIncompat
       featureROCompat
       uuid
-      volumeName
-      lastMounted
+      (list2string volumeName)
+      (list2string lastMounted)
       algoBitmap
-      preallocBlocks
-      preallocDirBlocks
+      (N_of_ascii preallocBlocks)
+      (N_of_ascii preallocDirBlocks)
       journalUUID
       journalInum
       journalDev
       lastOrphan
       hashSeed
-      defHashVersion
+      (N_of_ascii defHashVersion)
       defaultMountOptions
       firstMetaBg
   ))))))))))))))))))))))))))))))))))))))))))))).
 
-Definition blockSize (superblock: SuperBlock) : Z :=
-  Z.shiftl 1024 superblock.(logBlockSize).
+Definition blockSize (superblock: SuperBlock) : N :=
+  N.shiftl 1024 superblock.(logBlockSize).
 
 Definition ba2Offset (superblock: SuperBlock) (blockAddress: BA)
   := (blockSize superblock) * blockAddress.
@@ -174,15 +178,15 @@ Structure GroupDescriptor := mkGroupDescriptor {
   blockBitmap: BA;
   inodeBitmap: BA;
   inodeTable: BA;
-  gdFreeBlocksCount: Z;
-  gdFreeInodesCount: Z;
-  usedDirsCount: Z
+  gdFreeBlocksCount: N;
+  gdFreeInodesCount: N;
+  usedDirsCount: N
 }.
 
 Definition findAndParseGroupDescriptor 
-  (disk: Disk) (superblock: SuperBlock) (groupId: Z)
+  (disk: Disk) (superblock: SuperBlock) (groupId: N)
   : @Fetch GroupDescriptor :=
-  let groupBlockArrayBA := if (blockSize superblock >? 1024)
+  let groupBlockArrayBA := if (1024 <? blockSize superblock)
     then 1 else 2 in
   let groupBlockArrayOffset :=
     ba2Offset superblock groupBlockArrayBA in
@@ -207,31 +211,31 @@ Definition findAndParseGroupDescriptor
 
 (* ======= INode ======= *)
 Structure Inode := mkInode {
-  mode: Z;
-  uid: Z;
-  size: Z;
-  atime: Z;
-  ctime: Z;
-  mtime: Z;
-  dtime: Z;
-  gid: Z;
-  linksCount: Z;
-  blocks: Z;
-  flags: Z;
-  osd1: Z;
+  mode: N;
+  uid: N;
+  size: N;
+  atime: N;
+  ctime: N;
+  mtime: N;
+  dtime: N;
+  gid: N;
+  linksCount: N;
+  blocks: N;
+  flags: N;
+  osd1: N;
   block: list BA;
-  generation: Z;
-  fileACL: Z;
-  dirACL: Z;
-  faddr: Z;
-  osd2: Z
+  generation: N;
+  fileACL: N;
+  dirACL: N;
+  faddr: N;
+  osd2: N
 }.
 
 Definition findAndParseInode (disk: Disk)
   (superblock: SuperBlock) (groupdesc: GroupDescriptor)
-  (inodeIndex: Z): @Fetch Inode :=
+  (inodeIndex: N): @Fetch Inode :=
   (* Check for valid Inode *)
-  if (inodeIndex >=? superblock.(inodesCount))
+  if (superblock.(inodesCount) <=? inodeIndex)
   then ErrorString "Invalid inode index"
   else
     (* Inode Table is 1-indexed *)
@@ -303,15 +307,15 @@ Definition findAndParseInode (disk: Disk)
 (* ======= Fetch Arbitrary Bytes For An Inode ======= *)
 (* Recursive function for dealing with levels of indirection *)
 Fixpoint walkIndirection (disk: Disk) (superblock: SuperBlock)
-  (blockNumber indirectionPos: Z) (indirectionLevel: nat) 
-  : @Fetch Z :=
+  (blockNumber indirectionPos: N) (indirectionLevel: nat) 
+  : @Fetch BA :=
   match indirectionLevel with
   | O => 
       let bytePosition := (indirectionPos + 4 * blockNumber) in
       (seq_lendu disk bytePosition 4)
   | S nextIndirectionLevel =>
     (* Type conversion *)
-    let exponent := Z.of_nat indirectionLevel in
+    let exponent := N.of_nat indirectionLevel in
     let unitSizeInBlocks := 
       ((blockSize superblock) ^ exponent) / (4 ^ exponent) in
     let nextBlockIndex := blockNumber / unitSizeInBlocks in
@@ -328,7 +332,7 @@ Fixpoint walkIndirection (disk: Disk) (superblock: SuperBlock)
 
 
 Definition fetchInodeByte (disk: Disk) (superblock: SuperBlock) 
-  (inode: Inode) (bytePos: Z): @Fetch Z :=
+  (inode: Inode) (bytePos: N): @Fetch Byte :=
   if inode.(size) <=? bytePos then 
     MissingAt bytePos
   else 
@@ -339,7 +343,7 @@ Definition fetchInodeByte (disk: Disk) (superblock: SuperBlock)
     let indirect2Addressable := (blockSize * blockSize) / 16 in
 
     (if blockNumInFile <=? directAddressable then
-      match (nth_error inode.(block) (Z.to_nat blockNumInFile)) with
+      match (nth_error inode.(block) (N.to_nat blockNumInFile)) with
       | error => ErrorString "Data block not present"
       | value v => Found v
       end
@@ -385,7 +389,7 @@ Definition fetchInodeByte (disk: Disk) (superblock: SuperBlock)
 
 (* ======= Delete ======= *)
 Definition parseDeleted (disk: Disk) (superblock: SuperBlock)
-  (groupdesc: GroupDescriptor) (inodeIndex: Z) : @Fetch bool :=
+  (groupdesc: GroupDescriptor) (inodeIndex: N) : @Fetch bool :=
   let inodeIndexInGroup := 
     (* 1-Indexed *)
     (inodeIndex - 1) mod superblock.(inodesPerGroup) in
@@ -395,12 +399,21 @@ Definition parseDeleted (disk: Disk) (superblock: SuperBlock)
   (disk (bitmapStart + (inodeIndexInGroup / 8))) 
     _fmap_ (fun allocationByte =>
     (* The bit associated with this inode is 0 *)
-    (negb (Z.testbit allocationByte
-                     (inodeIndexInGroup mod 8)))
+    match (allocationByte, inodeIndexInGroup mod 8) with
+    | (Ascii b _ _ _ _ _ _ _, 0) => negb b
+    | (Ascii _ b _ _ _ _ _ _, 1) => negb b
+    | (Ascii _ _ b _ _ _ _ _, 2) => negb b
+    | (Ascii _ _ _ b _ _ _ _, 3) => negb b
+    | (Ascii _ _ _ _ b _ _ _, 4) => negb b
+    | (Ascii _ _ _ _ _ b _ _, 5) => negb b
+    | (Ascii _ _ _ _ _ _ b _, 6) => negb b
+    | (Ascii _ _ _ _ _ _ _ b, 7) => negb b
+    | _ => false  (* should never be reached *)
+    end
   ).
 
-Definition fileByte (disk: Disk) (inodeIndex offset: Z)
-  : @Fetch Z :=
+Definition fileByte (disk: Disk) (inodeIndex offset: N)
+  : @Fetch Byte :=
   (findAndParseSuperBlock disk) _fflatmap_ (fun superblock =>
   let groupId := ((inodeIndex - 1) (* One-indexed *)
                   / superblock.(inodesPerGroup)) in
@@ -413,7 +426,7 @@ Definition fileByte (disk: Disk) (inodeIndex offset: Z)
       fetchInodeByte disk superblock inode offset
   ))).
 
-Definition findAndParseFile (disk: Disk) (inodeIndex: Z) 
+Definition findAndParseFile (disk: Disk) (inodeIndex: N) 
   : @Fetch File :=
   (findAndParseSuperBlock disk) _fflatmap_ (fun superblock =>
   let groupId := ((inodeIndex - 1) (* One-indexed *)
