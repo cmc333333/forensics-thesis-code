@@ -9,24 +9,21 @@ Require Import FileIds.
 
 Local Open Scope N.
 
-Fixpoint fetchByteInner (fileId: FileId) (disk: Disk): N->@Fetch Byte :=
+Fixpoint fetchByte (fileId: FileId) (disk: Disk)
+  : N->@Fetch Byte := 
   match fileId with
   | Ext2Id inodeIndex => Ext2.fileByte disk inodeIndex
-  | TarId fs shiftAmt => fetchByteInner fs (shift disk shiftAmt)
+  | TarId fs shiftAmt => fetchByte fs (shift disk shiftAmt)
   | MockId data => data
   end.
 
-(* Treat negative values as counting back from the end of a file 
-   (a la Python) *)
-Fixpoint fetchByte (file: File) (disk: Disk) (offset: N): @Fetch Byte := 
-  (fetchByteInner file.(fileId)) disk offset.
-
 (* Cleaner notation for file access. *)
-Notation "f @[ i | d ]" := (fetchByte f d i) (at level 60).
+Notation "f @[ i | d ]" := 
+    (fetchByte f.(fileId) d i) (at level 60).
 Notation "f @[- i | d ]" := 
-    (fetchByte f d (Z.to_N ((Z.opp (Z.of_N i))
-                            mod 
-                            (Z.of_N f.(fileSize))))) 
+    (fetchByte f.(fileId) d (Z.to_N ((Z.opp (Z.of_N i))
+                                     mod 
+                                     (Z.of_N f.(fileSize))))) 
     (at level 60).
 
 

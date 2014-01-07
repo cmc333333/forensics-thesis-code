@@ -11,7 +11,8 @@ Inductive Fetch {A:Type}: Type :=
 .
 
 (* Functional programming idioms *)
-Definition fetch_flatmap {A B:Type} (opt: @Fetch A) (fn: A -> @Fetch B)
+Definition fetch_flatmap {A B:Type} (opt: @Fetch A) 
+  (fn: A -> @Fetch B)
   : @Fetch B :=
   match opt with
     | Found a => fn a

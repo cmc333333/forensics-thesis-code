@@ -50,59 +50,95 @@ Definition beforeOrConcurrent (lhs rhs: Event) :=
   end.
 
 Definition foundOn (event: Event) (disk: Disk) :=
-  exists (file: File),
-    isOnDisk file disk
-    /\ match event with
-       | FileAccess timestamp fs =>
-          fs = file.(fileId) /\ file.(lastAccess) = value timestamp
-       | FileModification timestamp fs =>
-          fs = file.(fileId) /\ file.(lastModification) = value timestamp
-       | FileCreation timestamp fs =>
-          fs = file.(fileId) /\ file.(lastCreated) = value timestamp
-       | FileDeletion timestamp fs =>
-          fs = file.(fileId) /\ file.(lastDeleted) = value timestamp
-       end.
+  match event with
+  | FileAccess timestamp fs => exists (file: File),
+        isOnDisk file disk
+        /\ fs = file.(fileId)
+        /\ file.(lastAccess) = value timestamp
+  | FileModification timestamp fs => exists (file: File),
+        isOnDisk file disk
+        /\ fs = file.(fileId)
+        /\ file.(lastModification) = value timestamp
+  | FileCreation timestamp fs => exists (file: File),
+        isOnDisk file disk
+        /\ fs = file.(fileId)
+        /\ file.(lastCreated) = value timestamp
+  | FileDeletion timestamp fs => exists (file: File),
+        isOnDisk file disk
+        /\ fs = file.(fileId)
+        /\ file.(lastDeleted) = value timestamp
+  end.
 
 Definition foundOn_compute (event: Event) (disk: Disk) (file: File) :=
-  isOnDisk_compute file disk
-  && match event with
-     | FileAccess timestamp fs =>
-        FileIds.eqb fs file.(fileId)
-        && optN_eqb file.(lastAccess) (value timestamp)
-     | FileModification timestamp fs =>
-        FileIds.eqb fs file.(fileId)
-        && optN_eqb file.(lastModification) (value timestamp)
-     | FileCreation timestamp fs =>
-        FileIds.eqb fs file.(fileId)
-        && optN_eqb file.(lastCreated) (value timestamp)
-     | FileDeletion timestamp fs =>
-        FileIds.eqb fs file.(fileId)
-        && optN_eqb file.(lastDeleted) (value timestamp)
-     end.
+  match event with
+  | FileAccess timestamp fs => 
+    isOnDisk_compute file disk
+    && FileIds.eqb fs file.(fileId)
+    && optN_eqb file.(lastAccess) (value timestamp)
+  | FileModification timestamp fs =>
+    isOnDisk_compute file disk
+    && FileIds.eqb fs file.(fileId)
+    && optN_eqb file.(lastModification) (value timestamp)
+  | FileCreation timestamp fs =>
+    isOnDisk_compute file disk
+    && FileIds.eqb fs file.(fileId)
+    && optN_eqb file.(lastCreated) (value timestamp)
+  | FileDeletion timestamp fs =>
+    isOnDisk_compute file disk
+    && FileIds.eqb fs file.(fileId)
+    && optN_eqb file.(lastDeleted) (value timestamp)
+  end.
 
 Lemma foundOn_reflection (event: Event) (disk: Disk) (file: File) :
   foundOn_compute event disk file = true -> foundOn event disk.
 Proof.
-  intros. unfold foundOn_compute in H. 
-  apply Bool.andb_true_iff in H. destruct H.
-  unfold foundOn. exists file.
-  split. apply isOnDisk_reflection. auto.
+  intros. 
+  unfold foundOn_compute in H.  unfold foundOn.
   destruct event.
-    apply Bool.andb_true_iff in H0. destruct H0. 
-      split. apply FileIds.eqb_reflection. auto.
-             apply optN_eqb_reflection. auto.
-    apply Bool.andb_true_iff in H0. destruct H0. 
-      split. apply FileIds.eqb_reflection. auto.
-             apply optN_eqb_reflection. auto.
-    apply Bool.andb_true_iff in H0. destruct H0. 
-      split. apply FileIds.eqb_reflection. auto.
-             apply optN_eqb_reflection. auto.
-    apply Bool.andb_true_iff in H0. destruct H0. 
-      split. apply FileIds.eqb_reflection. auto.
-             apply optN_eqb_reflection. auto.
+    apply Bool.andb_true_iff in H; destruct H;
+      apply Bool.andb_true_iff in H; destruct H;
+      exists file;
+        split; 
+          [ apply isOnDisk_reflection; auto
+          | split; 
+            [ apply FileIds.eqb_reflection; auto
+            | apply optN_eqb_reflection; auto]].
+    apply Bool.andb_true_iff in H; destruct H;
+      apply Bool.andb_true_iff in H; destruct H;
+      exists file;
+        split; 
+          [ apply isOnDisk_reflection; auto
+          | split; 
+            [ apply FileIds.eqb_reflection; auto
+            | apply optN_eqb_reflection; auto]].
+    apply Bool.andb_true_iff in H; destruct H;
+      apply Bool.andb_true_iff in H; destruct H;
+      exists file;
+        split; 
+          [ apply isOnDisk_reflection; auto
+          | split; 
+            [ apply FileIds.eqb_reflection; auto
+            | apply optN_eqb_reflection; auto]].
+    apply Bool.andb_true_iff in H; destruct H;
+      apply Bool.andb_true_iff in H; destruct H;
+      exists file;
+        split; 
+          [ apply isOnDisk_reflection; auto
+          | split; 
+            [ apply FileIds.eqb_reflection; auto
+            | apply optN_eqb_reflection; auto]].
 Qed. 
 
-Definition isSoundPair (disk: Disk) (pair: ((Event*File)*(Event*File))) :=
+Definition isSoundPair (disk: Disk) 
+  (pair: (Event*File)*(Event*File)) :=
+  let (lhsEvent, _) := fst pair in
+  let (rhsEvent, _) := snd pair in
+  foundOn lhsEvent disk
+  /\ foundOn rhsEvent disk
+  /\ beforeOrConcurrent lhsEvent rhsEvent = true.
+
+Definition isSoundPair_compute (disk: Disk) 
+  (pair: ((Event*File)*(Event*File))) :=
   match pair with
   | ((lhsEvent, lhsFile), (rhsEvent, rhsFile)) =>
       foundOn_compute lhsEvent disk lhsFile
@@ -110,20 +146,40 @@ Definition isSoundPair (disk: Disk) (pair: ((Event*File)*(Event*File))) :=
       && beforeOrConcurrent lhsEvent rhsEvent
   end.
 
+Lemma isSoundPair_reflection (disk: Disk)
+  (pair: ((Event*File)*(Event*File))) :
+  isSoundPair_compute disk pair = true ->
+    isSoundPair disk pair.
+Proof.
+  intros. destruct pair as [lhs rhs].
+    destruct lhs as [lhsEvent lhsFile].
+    destruct rhs as [rhsEvent rhsFile].
+  unfold isSoundPair_compute in H.
+  unfold isSoundPair. simpl.
+  apply Bool.andb_true_iff in H. destruct H. 
+  apply Bool.andb_true_iff in H. destruct H. 
+  split. 
+    apply foundOn_reflection with (file := lhsFile). auto.
+  split. 
+    apply foundOn_reflection with (file := rhsFile). auto.
+
+    auto.
+Qed.
+    
 Definition isSound (timeline: Timeline) (disk: Disk) :=
   exists (files: list File),
     let eventFiles := combine timeline files in
     let staggered := combine eventFiles (skipn 1 eventFiles) in
-    length eventFiles = length timeline
-    /\ forall (pair: ((Event*File)*(Event*File))),
-        In pair staggered -> isSoundPair disk pair = true.
+    length files = length timeline
+    /\ forall (pair: (Event*File)*(Event*File)),
+        In pair staggered -> isSoundPair disk pair.
 
 Definition isSound_compute (timeline: Timeline) (disk: Disk) 
   (files: list File) :=
   let eventFiles := combine timeline files in
   let staggered := combine eventFiles (skipn 1 eventFiles) in
-  beq_nat (length eventFiles) (length timeline)
-  && forallb (isSoundPair disk) staggered.
+  beq_nat (length files) (length timeline)
+  && forallb (isSoundPair_compute disk) staggered.
 
 Lemma isSound_reflection (timeline: Timeline) (disk: Disk)
   (files: list File) :
@@ -134,5 +190,7 @@ Proof.
   unfold isSound_compute in H.
   apply Bool.andb_true_iff in H. destruct H. 
   split. apply beq_nat_eq. auto.
-  apply forallb_forall. auto.
+  rewrite forallb_forall in H0.
+  intros. apply isSoundPair_reflection.
+  apply H0. auto.
 Qed.

@@ -60,15 +60,15 @@ Qed.
 
 Definition isElf (file: File) (disk: Disk) :=
      file @[ 0 | disk ] = Found "127"
-  /\ file @[ 1 | disk ] = Found "e"
-  /\ file @[ 2 | disk ] = Found "l"
-  /\ file @[ 3 | disk ] = Found "f".
+  /\ file @[ 1 | disk ] = Found "E"
+  /\ file @[ 2 | disk ] = Found "L"
+  /\ file @[ 3 | disk ] = Found "F".
 
 Definition isElf_compute (file: File) (disk: Disk) :=
      Byte.feqb (file @[ 0 | disk ]) (Found "127")
-  && Byte.feqb (file @[ 1 | disk ]) (Found "e")
-  && Byte.feqb (file @[ 2 | disk ]) (Found "l")
-  && Byte.feqb (file @[ 3 | disk ]) (Found "f").
+  && Byte.feqb (file @[ 1 | disk ]) (Found "E")
+  && Byte.feqb (file @[ 2 | disk ]) (Found "L")
+  && Byte.feqb (file @[ 3 | disk ]) (Found "F").
 
 Lemma isElf_reflection (file: File) (disk: Disk) :
   isElf_compute file disk = true -> isElf file disk.

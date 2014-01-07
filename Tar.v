@@ -18,52 +18,79 @@ Local Open Scope N.
 Fixpoint fromOctalAscii (bytes: list Byte) : Exc N :=
   match bytes with
   | nil => value 0
-  | byte :: tail => match (fromOctalAscii tail) with
+  | byte :: tl => match (fromOctalAscii tl) with
     | error => error
     | value rest => 
       let byte := Ascii.N_of_ascii byte in
       if (andb (48 <=? byte) (byte <=? 56))
       then value (rest + ((byte - 48) 
-                          * (8 ^ (N.of_nat (List.length tail)))))
+                          * (8 ^ (N.of_nat (List.length tl)))))
       else error (* Invalid character *)
     end
   end.
 
-Definition parseFirstFileNameAndSize (tar: File) (offset: N) (disk: Disk)
-  : @Fetch (string*N) :=
-  let firstHundredBytes := map (fetchByte tar disk) 
-                               (offset upto (100 + offset)) in
-  let fileNameByte := fetch_flatten (takeWhile 
-    (fun (byte: @Fetch Byte) => match byte with
-      | Found (Ascii b1 b2 b3 b4 b5 b6 b7 b8) => 
-          b1 || b2 || b3 || b4 || b5 || b6 || b7 || b8
-      | _ => false       (* stop *)
-    end) firstHundredBytes) in
-  let fileName := list2string fileNameByte in
-  (* File Size is encoded in octal, represented as ASCII characters. It begins
-  at offset 124 and runs for 11 characters *)
-  (seq_list (fetchByte tar disk) (offset + 124) 11) 
+Definition parseFileName (bytes: ByteData) :=
+  let firstHundredBytes := map bytes (0 upto 100) in
+  let perByte := fun (acc: @Fetch (list Byte) )
+                     (next: @Fetch Byte) =>
+    match (acc, next) with
+    | (Found (hd :: tl), Found next) =>
+        if (ascii_eqb hd Ascii.zero)  (* Null *)
+        then acc
+        else Found (next :: hd :: tl)
+    | (Found _, Found next) =>
+        Found (next :: nil)
+    | (Found (hd :: tl), MissingAt idx) =>
+        if (ascii_eqb hd Ascii.zero)  (* Null *)
+        then acc
+        else MissingAt idx
+    | (Found (hd :: tl), ErrorString str) =>
+        if (ascii_eqb hd Ascii.zero)  (* Null *)
+        then acc
+        else ErrorString str
+    | (other, _) => other
+    end in
+  (fold_left perByte firstHundredBytes (Found nil)) 
+    _fmap_ (fun byteList => match byteList with
+    (* Strip off the null character *)
+    | hd :: tl => list2string (rev tl)
+    | _ => EmptyString
+    end).
+
+Definition parseFileSize (bytes: ByteData) :=
+  (seq_list bytes 124 11)
     _fflatmap_ (fun fileSizeList =>
-  match (fromOctalAscii fileSizeList) _map_ (fun fileSize =>
-    (fileName, fileSize)
-  ) with 
-  | error => ErrorString "Invalid Tar File Size"
-  | value v => Found v
-  end).
+    match (fromOctalAscii fileSizeList) with
+    | error => ErrorString "Invalid Tar Size"
+    | value size => Found size
+    end).
+
+Definition parseFileNameAndSize (tar: File) (offset: N) 
+  (disk: Disk)
+  : @Fetch (string*N) :=
+  let byteData := shift (fetchByte tar.(fileId) disk) 
+                        offset in
+  (parseFileName byteData) _fflatmap_ (fun name =>
+  (parseFileSize byteData) _fmap_ (fun size =>
+    (name, size)
+  )).
 
 Definition recFileNameFrom (nextCall: N -> list string) 
   (tar: File) (remaining: N) (disk: Disk) : list string :=
   if (remaining <=? 0)
     then nil
-  else match (parseFirstFileNameAndSize tar (tar.(fileSize) - remaining) disk) with
-    | Found (fileName, firstSize) =>
-        (* Strip the first file out of the tar *)
+  else match 
+    (parseFileNameAndSize tar
+                          (tar.(fileSize) - remaining) 
+                          disk) with
+    | Found (fileName, fileSize) =>
+        (* Strip the next file out of the tar *)
         (* Round to the nearest 512 *)
-        let firstFileSize := (
-          if (firstSize mod 512 =? 0)
-          then firstSize + 512
-          else 512 * (2 + (firstSize / 512))) in
-        fileName :: (nextCall (remaining - firstFileSize))
+        let nextFileSize := (
+          if (fileSize mod 512 =? 0)
+          then fileSize + 512
+          else 512 * (2 + (fileSize / 512))) in
+        fileName :: (nextCall (remaining - nextFileSize))
     | _ => nil
     end.
 
@@ -78,21 +105,22 @@ Definition parseFileNames (file: File) (disk: Disk): list string :=
   file.(fileSize).
 
 Definition looksLikeRootkit (file: File) (disk: Disk) :=
-  let parsed := parseFileNames file disk in
+  let fileNames := parseFileNames file disk in
   exists (filename1 filename2: string),
-    In filename1 parsed
-    /\ In filename2 parsed
+    filename1 <> filename2
+    /\ In filename1 fileNames
+    /\ In filename2 fileNames
     /\ (FileNames.systemFile filename1)
-    /\ (FileNames.systemFile filename2)
-    /\ filename1 <> filename2.
+    /\ (FileNames.systemFile filename2).
 
 Definition looksLikeRootkit_compute (file: File) (disk: Disk)
   (filename1 filename2: string) :=
-     (existsb (string_eqb filename1) (parseFileNames file disk))
-  && (existsb (string_eqb filename2) (parseFileNames file disk))
+  let fileNames := parseFileNames file disk in
+     (negb (string_eqb filename1 filename2))
+  && (existsb (string_eqb filename1) fileNames)
+  && (existsb (string_eqb filename2) fileNames)
   && (FileNames.systemFile_compute filename1)
-  && (FileNames.systemFile_compute filename2)
-  && (negb (string_eqb filename1 filename2)).
+  && (FileNames.systemFile_compute filename2).
 
 Lemma looksLikeRootkit_reflection (file: File) (disk: Disk)
   (filename1 filename2: string) :
@@ -107,14 +135,16 @@ Proof.
   apply Bool.andb_true_iff in H. destruct H.
   exists filename1. exists filename2.
   split. 
-    apply existsb_exists in H. destruct H. destruct H.
-    apply string_eqb_reflection in H4. rewrite <- H4 in H. auto.
-  split. 
+    compute. intros. apply <- string_eqb_reflection in H4.
+    rewrite H4 in H. discriminate H.
+  split.
     apply existsb_exists in H3. destruct H3. destruct H3.
     apply string_eqb_reflection in H4. rewrite <- H4 in H3. auto.
-  split. apply systemFile_reflection. auto.
-  split. apply systemFile_reflection. auto.
+  split. 
+    apply existsb_exists in H2. destruct H2. destruct H2.
+    apply string_eqb_reflection in H4. rewrite <- H4 in H2. auto.
+  split. 
+    apply systemFile_reflection. auto.
 
-  compute. intros. apply <- string_eqb_reflection in H4.
-  rewrite H4 in H0. discriminate H0.
+    apply systemFile_reflection. auto.
 Qed.

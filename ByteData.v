@@ -41,5 +41,5 @@ Coercion Disk_of_Map_N_Byte : Map_N_Byte >-> Disk.
 
 (* Change the "zero" index; i.e. "shift" the bytes *)
 Definition shift (bytes: ByteData) (shiftAmount index: N) 
-  : Fetch :=
+  : @Fetch Byte :=
   bytes (shiftAmount + index).

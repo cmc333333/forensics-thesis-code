@@ -71,7 +71,8 @@ Structure SuperBlock := mkSuperBlock {
   firstMetaBg: N
 }.
 
-Definition findAndParseSuperBlock (disk: Disk): @Fetch SuperBlock :=
+Definition findAndParseSuperBlock (disk: Disk)
+  : @Fetch SuperBlock :=
   let disk := (shift disk 1024) in
   (seq_lendu disk 0 4) _fflatmap_ (fun inodesCount =>
   (seq_lendu disk 4 4) _fflatmap_ (fun blocksCount =>
@@ -166,7 +167,7 @@ Definition findAndParseSuperBlock (disk: Disk): @Fetch SuperBlock :=
       firstMetaBg
   ))))))))))))))))))))))))))))))))))))))))))))).
 
-Definition blockSize (superblock: SuperBlock) : N :=
+Definition blockSize (superblock: SuperBlock) :=
   N.shiftl 1024 superblock.(logBlockSize).
 
 Definition ba2Offset (superblock: SuperBlock) (blockAddress: BA)
@@ -270,8 +271,10 @@ Definition findAndParseInode (disk: Disk)
     (seq_lendu disk 80 4) _fflatmap_ (fun directBlock11 =>
     (seq_lendu disk 84 4) _fflatmap_ (fun directBlock12 =>
     (seq_lendu disk 88 4) _fflatmap_ (fun indirectBlock =>
-    (seq_lendu disk 92 4) _fflatmap_ (fun doubleIndirectBlock =>
-    (seq_lendu disk 96 4) _fflatmap_ (fun tripleIndirectBlock =>
+    (seq_lendu disk 92 4) _fflatmap_ (fun 
+                                      doubleIndirectBlock =>
+    (seq_lendu disk 96 4) _fflatmap_ (fun 
+                                      tripleIndirectBlock =>
     (seq_lendu disk 100 4) _fflatmap_ (fun generation =>
     (seq_lendu disk 104 4) _fflatmap_ (fun fileACL =>
     (seq_lendu disk 108 4) _fflatmap_ (fun dirACL =>
@@ -311,8 +314,8 @@ Fixpoint walkIndirection (disk: Disk) (superblock: SuperBlock)
   : @Fetch BA :=
   match indirectionLevel with
   | O => 
-      let bytePosition := (indirectionPos + 4 * blockNumber) in
-      (seq_lendu disk bytePosition 4)
+    let bytePosition := (indirectionPos + 4 * blockNumber) in
+    (seq_lendu disk bytePosition 4)
   | S nextIndirectionLevel =>
     (* Type conversion *)
     let exponent := N.of_nat indirectionLevel in
@@ -343,7 +346,8 @@ Definition fetchInodeByte (disk: Disk) (superblock: SuperBlock)
     let indirect2Addressable := (blockSize * blockSize) / 16 in
 
     (if blockNumInFile <=? directAddressable then
-      match (nth_error inode.(block) (N.to_nat blockNumInFile)) with
+      match (nth_error inode.(block)
+                       (N.to_nat blockNumInFile)) with
       | error => ErrorString "Data block not present"
       | value v => Found v
       end
@@ -363,7 +367,8 @@ Definition fetchInodeByte (disk: Disk) (superblock: SuperBlock)
                                + indirect1Addressable
                                + indirect2Addressable then
       match (nth_error inode.(block) 13)  with
-      | error => ErrorString "Double indirection block not present"
+      | error => ErrorString 
+                   "Double indirection block not present"
       | value doubleIndirectBlock =>
         walkIndirection disk superblock
           (blockNumInFile - 12 - (blockSize / 4)) 
@@ -373,7 +378,8 @@ Definition fetchInodeByte (disk: Disk) (superblock: SuperBlock)
 
     else 
       match (nth_error inode.(block) 14) with
-      | error => ErrorString "Triple indirection block not present"
+      | error => ErrorString
+                   "Triple indirection block not present"
       | value tripleIndirectBlock =>
         walkIndirection disk superblock 
           (blockNumInFile - directAddressable
