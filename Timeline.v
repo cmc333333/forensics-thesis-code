@@ -129,33 +129,32 @@ Proof.
             | apply optN_eqb_reflection; auto]].
 Qed. 
 
-Definition isSoundPair (disk: Disk) 
-  (pair: (Event*File)*(Event*File)) :=
-  let (lhsEvent, _) := fst pair in
-  let (rhsEvent, _) := snd pair in
+Definition isSoundPair (disk: Disk) (eventPair: Event*Event) :=
+  let (lhsEvent, rhsEvent) := eventPair in
   foundOn lhsEvent disk
   /\ foundOn rhsEvent disk
   /\ beforeOrConcurrent lhsEvent rhsEvent = true.
 
 Definition isSoundPair_compute (disk: Disk) 
-  (pair: ((Event*File)*(Event*File))) :=
-  match pair with
-  | ((lhsEvent, lhsFile), (rhsEvent, rhsFile)) =>
-      foundOn_compute lhsEvent disk lhsFile
-      && foundOn_compute rhsEvent disk rhsFile
-      && beforeOrConcurrent lhsEvent rhsEvent
-  end.
+  (pairPair: (Event*Event)*(File*File)) :=
+  let (eventPair, filePair) := pairPair in
+  let (lhsEvent, rhsEvent) := eventPair in
+  let (lhsFile, rhsFile) := filePair in
+  foundOn_compute lhsEvent disk lhsFile
+  && foundOn_compute rhsEvent disk rhsFile
+  && beforeOrConcurrent lhsEvent rhsEvent.
 
 Lemma isSoundPair_reflection (disk: Disk)
-  (pair: ((Event*File)*(Event*File))) :
-  isSoundPair_compute disk pair = true ->
-    isSoundPair disk pair.
+  (eventPair: Event*Event) (filePair: File*File) :
+  isSoundPair_compute disk (eventPair, filePair) = true ->
+    isSoundPair disk eventPair.
 Proof.
-  intros. destruct pair as [lhs rhs].
-    destruct lhs as [lhsEvent lhsFile].
-    destruct rhs as [rhsEvent rhsFile].
+  intros. 
+    destruct eventPair as [lhsEvent rhsEvent].
+    destruct filePair as [lhsFile rhsFile].
+  
   unfold isSoundPair_compute in H.
-  unfold isSoundPair. simpl.
+  unfold isSoundPair.
   apply Bool.andb_true_iff in H. destruct H. 
   apply Bool.andb_true_iff in H. destruct H. 
   split. 
@@ -165,32 +164,80 @@ Proof.
 
     auto.
 Qed.
-    
+
 Definition isSound (timeline: Timeline) (disk: Disk) :=
+  let staggeredEvents := combine timeline (skipn 1 timeline) in
+  forall (pair: Event*Event),
+    In pair staggeredEvents -> isSoundPair disk pair.
+
+Definition isSound_tmp (timeline: Timeline) (disk: Disk) :=
   exists (files: list File),
-    let eventFiles := combine timeline files in
-    let staggered := combine eventFiles (skipn 1 eventFiles) in
-    length files = length timeline
-    /\ forall (pair: (Event*File)*(Event*File)),
-        In pair staggered -> isSoundPair disk pair.
+    let staggeredEvents := combine timeline (skipn 1 timeline) in
+    let staggeredFiles := combine files (skipn 1 files) in
+    let combined := combine staggeredEvents staggeredFiles in
+    length staggeredEvents = length staggeredFiles
+    /\ forall (pairPair: (Event*Event)*(File*File)),
+        In pairPair combined -> isSoundPair disk (fst pairPair).
+
+Lemma strip_list_l {L R: Type} (lhs:list L) (rhs: list R)
+  (prop:L->Prop) : 
+  length lhs = length rhs
+  -> (forall (pair: L*R), In pair (combine lhs rhs) -> prop (fst pair))
+  -> (forall (l: L), In l lhs -> prop l).
+Proof.
+  generalize rhs prop. clear rhs prop.
+  induction lhs. 
+    intros. destruct rhs; [
+      contradict H1
+      | simpl in H; discriminate H].
+    intros. destruct rhs; [ 
+      simpl in H; discriminate H
+      |]. 
+      destruct H1.
+        specialize (H0 (l, r)).
+          simpl in H0. apply H0. left. subst. reflexivity.
+        apply IHlhs with (rhs := rhs).
+          inversion H. reflexivity.
+          intros pair inn.
+            assert (In pair (combine (a :: lhs) (r :: rhs))).
+            apply in_cons. assumption.
+          apply H0. assumption.
+          assumption.
+Qed.
+
+Lemma isSound_tmp_impl (timeline: Timeline) (disk: Disk) :
+  isSound_tmp timeline disk -> isSound timeline disk.
+Proof.
+  intros.
+    unfold isSound_tmp in H. destruct H as [files]. destruct H.
+    unfold isSound.
+    remember (combine timeline (skipn 1 timeline)) as staggeredEvents.
+    remember (combine files (skipn 1 files)) as staggeredFiles.
+    apply strip_list_l with (rhs := staggeredFiles).
+    assumption. assumption.
+Qed.
 
 Definition isSound_compute (timeline: Timeline) (disk: Disk) 
   (files: list File) :=
-  let eventFiles := combine timeline files in
-  let staggered := combine eventFiles (skipn 1 eventFiles) in
-  beq_nat (length files) (length timeline)
-  && forallb (isSoundPair_compute disk) staggered.
+  let staggeredEvents := combine timeline (skipn 1 timeline) in
+  let staggeredFiles := combine files (skipn 1 files) in
+  let combined := combine staggeredEvents staggeredFiles in
+  beq_nat (length staggeredEvents) (length staggeredFiles)
+  && forallb (isSoundPair_compute disk) combined.
 
 Lemma isSound_reflection (timeline: Timeline) (disk: Disk)
   (files: list File) :
   isSound_compute timeline disk files = true ->
     isSound timeline disk.
 Proof.
-  intros. unfold isSound. exists files.
+  intros. apply isSound_tmp_impl. unfold isSound_tmp. exists files.
   unfold isSound_compute in H.
   apply Bool.andb_true_iff in H. destruct H. 
   split. apply beq_nat_eq. auto.
   rewrite forallb_forall in H0.
-  intros. apply isSoundPair_reflection.
-  apply H0. auto.
+  intros. apply isSoundPair_reflection with (filePair := snd pairPair).
+  assert (fst pairPair |-> snd pairPair = pairPair).
+    destruct pairPair. simpl. reflexivity.
+  rewrite H2.
+  auto.
 Qed.
