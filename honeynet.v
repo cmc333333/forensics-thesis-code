@@ -45,13 +45,12 @@ Local Open Scope string.
 
 Definition honeynet_image_a : Disk := fill_disk 0%nat.
 (* All gunzip operations return the file mentioned *)
-Definition gunzip_a := (fun (input: File) => 
-  let asDisk := Disk_of_Map_N_Byte gunzipped_23 in
-  (mkFile (FileIds.MockId asDisk)
-          1454080 (* uncompressed file size *)
-          input.(deleted) 
-          (* Fields not used; ignore them *)
-          None None None None)).
+Definition gunzipped_a : File := mkFile 
+  (FileIds.MockId (MN.elements gunzipped_23))
+  1454080 (* uncompressed file size *)
+  true
+  (* Fields not used; ignore them *)
+  None None None None.
 
 Definition lee_timeline :=
   (* Mar 16 01 12:36:48 *)
@@ -156,10 +155,11 @@ Reflection - makes tactics smaller; makes proof terms smaller
 *)
 
 Lemma borland_honeynet_file:
-  borland_rootkit honeynet_image_a gunzip_a.
+  (gunzip file23) = gunzipped_a 
+    -> borland_rootkit honeynet_image_a.
   Proof.
     apply borland_reflection 
-      with (file := file23) 
+      with (file := file23) (gunzipped := gunzipped_a)
            (filename1 := maliciousFileName1) 
            (filename2 := maliciousFileName2).
     vm_compute. reflexivity.

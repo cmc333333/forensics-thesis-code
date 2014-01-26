@@ -98,9 +98,63 @@ end.
 Definition seq_lendu (disk: Disk) (offset: N) (length: N): @Fetch N :=
   (seq_list disk offset length) _fmap_ (fun tail => lendu tail).
 
+Fixpoint listN_Byte_eqb (l r: list (N*Byte)) := match (l, r) with
+  | (nil, nil) => true
+  | ((lN, lByte) :: ltail, (rN, rByte) :: rtail) =>
+      (lN =? rN)
+      && Byte.eqb lByte rByte
+      && listN_Byte_eqb ltail rtail
+  | (_, _) => false
+end.
+
+Lemma listN_Byte_eqb_reflection (l r: list (N*Byte)) :
+  listN_Byte_eqb l r = true <-> l = r.
+Proof.
+  split. (* -> *)
+    generalize r.
+    induction l.
+      destruct r0. 
+        reflexivity.
+        vm_compute. intros. inversion x.
+    intros.
+    destruct a.
+    destruct r0.
+      inversion H.
+
+      destruct p.
+      unfold listN_Byte_eqb in H.
+      apply Bool.andb_true_iff in H. destruct H.
+      apply Bool.andb_true_iff in H. destruct H.
+
+      apply N.eqb_eq in H. rewrite H.
+      apply Byte.eqb_reflection in H1. rewrite H1.
+      apply IHl in H0. rewrite H0.
+      reflexivity.
+  (* <- *)
+    generalize r.
+    induction l.
+      destruct r0. 
+        reflexivity.
+        intros. inversion H.
+    intros.
+    destruct r0.
+      inversion H.
+      
+      destruct a. destruct p.
+      unfold listN_Byte_eqb. apply Bool.andb_true_iff.
+      inversion H.
+      split. apply Bool.andb_true_iff. split.
+        apply N.eqb_eq. reflexivity.
+        apply Byte.eqb_reflection. reflexivity.
+        rewrite <- H3 at 1. apply IHl in H3. auto.
+Qed.
+      
+
 Fixpoint listN_eqb (l r: list N) := match (l, r) with
   | (nil, nil) => true
-  | (l :: ltail, r :: rtail) => (andb (l =? r) (listN_eqb ltail rtail))
+  | (l :: ltail, r :: rtail) =>
+      (l =? r) 
+      && listN_eqb ltail rtail
   | (_, _) => false
 end.
 

@@ -9,12 +9,18 @@ Require Import FileIds.
 
 Local Open Scope N.
 
+Definition findInPairList (data: list (N*Byte)) (key: N) :=
+  match (find (fun pair: N*Byte => (fst pair) =? key) data) with
+  | Some el => Found (snd el)
+  | None => MissingAt key
+  end.
+
 Fixpoint fetchByte (fileId: FileId) (disk: Disk)
   : N->@Fetch Byte := 
   match fileId with
   | Ext2Id inodeIndex => Ext2.fileByte disk inodeIndex
   | TarId fs shiftAmt => fetchByte fs (shift disk shiftAmt)
-  | MockId data => data
+  | MockId data => findInPairList data
   end.
 
 (* Cleaner notation for file access. *)
