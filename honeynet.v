@@ -1,4 +1,5 @@
 Require Import Coq.Lists.List.
+Require Import Coq.Strings.Ascii.
 Require Import Coq.Strings.String.
 Require Import Coq.ZArith.ZArith.
 
@@ -18,9 +19,31 @@ Require Import Util.
 Require Import example_images.
 
 Local Open Scope N.
+
+Local Open Scope char.
+Fixpoint fill_disk (level:nat) : Map_N_Byte :=
+  match level with
+  | O => honeynet_map
+  | S level_minus_one =>
+      let initial := (N.of_nat level_minus_one) * 25 + 100000000 in
+      (MN.add (0 + initial) "000" (MN.add (1 + initial) "000"
+      (MN.add (2 + initial) "000" (MN.add (3 + initial) "000"
+      (MN.add (4 + initial) "000" (MN.add (5 + initial) "000"
+      (MN.add (6 + initial) "000" (MN.add (7 + initial) "000"
+      (MN.add (8 + initial) "000" (MN.add (9 + initial) "000"
+      (MN.add (10 + initial) "000" (MN.add (11 + initial) "000"
+      (MN.add (12 + initial) "000" (MN.add (13 + initial) "000"
+      (MN.add (14 + initial) "000" (MN.add (15 + initial) "000"
+      (MN.add (16 + initial) "000" (MN.add (17 + initial) "000"
+      (MN.add (18 + initial) "000" (MN.add (19 + initial) "000"
+      (MN.add (20 + initial) "000" (MN.add (21 + initial) "000"
+      (MN.add (22 + initial) "000" (MN.add (23 + initial) "000"
+      (MN.add (24 + initial) "000"
+      (fill_disk level_minus_one))))))))))))))))))))))))))
+    end.
 Local Open Scope string.
 
-Definition honeynet_image_a : Disk := honeynet_map.
+Definition honeynet_image_a : Disk := fill_disk 0%nat.
 (* All gunzip operations return the file mentioned *)
 Definition gunzip_a := (fun (input: File) => 
   let asDisk := Disk_of_Map_N_Byte gunzipped_23 in
