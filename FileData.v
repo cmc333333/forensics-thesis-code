@@ -19,8 +19,8 @@ Fixpoint fetchByte (fileId: FileId) (disk: Disk)
   : N->@Fetch Byte := 
   match fileId with
   | Ext2Id inodeIndex => Ext2.fileByte disk inodeIndex
-  | TarId fs shiftAmt => fetchByte fs (shift disk shiftAmt)
   | MockId data => findInPairList data
+  | TarId fs shiftAmt => fetchByte fs (shift disk shiftAmt)
   end.
 
 (* Cleaner notation for file access. *)
