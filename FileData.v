@@ -2,6 +2,7 @@ Require Import Coq.ZArith.ZArith.
 
 Require Import Byte.
 Require Import ByteData.
+Require Import DiskSubset.
 Require Import Ext2.
 Require Import Fetch.
 Require Import File.
@@ -31,6 +32,22 @@ Notation "f @[- i | d ]" :=
                                      mod 
                                      (Z.of_N f.(fileSize))))) 
     (at level 60).
+
+Lemma fetchByte_subset :
+  forall (file: File) (sub super: Disk) (idx: N) (byte: Byte),
+    sub ⊆ super ->
+      (file @[ idx | sub] = Found byte
+          -> file @[ idx | super] = Found byte)
+      /\ (file @[- idx | sub] = Found byte
+            -> file @[- idx | super] = Found byte).
+Proof.
+  intros file sub super idx byte.
+  intros subset. unfold disk_subset in subset.
+  split.
+    unfold fetchByte.
+    destruct file.(fileId).
+  left.
+
 
 
 Definition isOnDiskTry1 (file: File) (disk: Disk) :=

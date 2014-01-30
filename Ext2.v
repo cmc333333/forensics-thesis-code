@@ -4,6 +4,7 @@ Require Import Coq.ZArith.ZArith.
 
 Require Import Byte.
 Require Import ByteData.
+Require Import DiskSubset.
 Require Import Fetch.
 Require Import File.
 Require Import StringOps.
@@ -166,6 +167,16 @@ Definition findAndParseSuperBlock (disk: Disk)
       defaultMountOptions
       firstMetaBg
   ))))))))))))))))))))))))))))))))))))))))))))).
+
+Lemma findAndParseSuperBlock_subset :
+  forall (sub super:Disk) (superblock: SuperBlock),
+    sub ⊆ super ->
+      findAndParseSuperBlock sub = Found superblock ->
+        findAndParseSuperBlock super = Found superblock.
+Proof.
+  intros sub super superblock subset.
+  unfold disk_subset in subset.
+  unfold findAndParseSuperBlock.
 
 Definition blockSize (superblock: SuperBlock) :=
   N.shiftl 1024 superblock.(logBlockSize).

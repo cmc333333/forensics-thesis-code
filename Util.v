@@ -6,6 +6,7 @@ Require Export List.
 
 Require Import Byte.
 Require Import ByteData.
+Require Import DiskSubset.
 Require Import Fetch.
 
 Local Open Scope bool.
@@ -88,6 +89,103 @@ Definition seq_list (disk: Disk) (start length: N): @Fetch (list Byte) :=
       start
   end.
 
+Lemma seq_list_subset :
+  forall (sub super: Disk) (start length: N) (val: list Byte),
+    sub ⊆ super ->
+      seq_list sub start length = Found val ->
+        seq_list super start length = Found val.
+Proof.
+  intros sub super start length val subsetH.
+  generalize start. clear start.
+  generalize val. clear val.
+  unfold disk_subset in subsetH.
+  destruct length.
+    unfold seq_list. auto.
+    apply Pos.peano_ind with (p := p).
+    simpl. 
+    intros val start.
+    remember (sub start).
+    destruct f; [| intros contra; discriminate contra
+                 | intros contra; discriminate contra].
+      symmetry in Heqf. apply subsetH in Heqf.
+      rewrite Heqf. auto.
+    intros p0. intros H.
+    unfold seq_list. 
+    rewrite Pos.peano_rect_succ. rewrite Pos.peano_rect_succ.
+    intros val st0. generalize val. clear val.
+    remember (sub st0).
+    destruct f.
+      symmetry in Heqf. apply subsetH in Heqf.
+      rewrite Heqf. simpl. 
+      unfold seq_list in H.
+      unfold fetch_map at 4.
+      intros val Hsub.
+      apply H.
+      simpl in H0.
+      unfold seq_list in H.
+    rewrite H with (val := val).
+    symmetry in Heqf.
+    unfold seq_list in H.
+    rewrite H with (val := val).
+    unfold fetch_flatmap in H0.
+    rewrite H0 in H.
+    destruct (sub start).
+      intros H2. 
+      symmetry in Heqf.
+    simpl.
+    intros val.
+    remember (sub start).
+    destruct f; [| intros contra; discriminate contra
+                 | intros contra; discriminate contra].
+      symmetry in Heqf. apply subsetH in Heqf.
+      rewrite Heqf. simpl.
+    intros. 
+  induction length.
+    unfold seq_list. auto.
+    apply Pos.peano_ind with (p := p).
+    simpl. 
+    remember (sub start).
+    destruct f; [| intros contra; discriminate contra
+                 | intros contra; discriminate contra].
+      symmetry in Heqf. apply subsetH in Heqf.
+      rewrite Heqf. auto.
+    intros p0.
+    intros H.
+    unfold seq_list. rewrite Pos.peano_rect_succ. rewrite Pos.peano_rect_succ.
+    remember (sub start).
+    destruct f; [| intros contra; discriminate contra
+                 | intros contra; discriminate contra].
+      symmetry in Heqf. apply subsetH in Heqf.
+      rewrite Heqf. simpl.
+    intros. 
+    cbv delta.
+    compute.
+  (fun (_ : positive) (seq_list_aux_pred_l : N -> Fetch) (start' : N) =>
+   super start'
+   _fflatmap_ (fun nextEl : Byte =>
+               seq_list_aux_pred_l (N.succ start')
+               _fmap_ (fun tail : list Byte => nextEl :: tail)))).
+    apply subsetH.
+    destruct f.
+    unfold fetch_flatmap.
+    intros.
+    unfold seq_list.
+    rewrite Pos.peano_rect_succ.
+    unfold seq_list in H0.
+      rewrite Pos.peano_rect_succ in H0.
+      intros contra. discriminate contra.
+      apply <- subsetH in Heqf.
+      apply <- Heqf in subsetH.
+    destruct (sub start).
+      assert
+    intr
+      apply subset H.
+    unfold seq_list.
+  induction length using Pos.peano_rec.
+    unfold seq_list. auto.
+    apply Pos.peano_case.
+
+
 (* little endian unsigned *)
 Fixpoint lendu (l : list Byte) : N := 
 match l with 
@@ -97,6 +195,10 @@ end.
 
 Definition seq_lendu (disk: Disk) (offset: N) (length: N): @Fetch N :=
   (seq_list disk offset length) _fmap_ (fun tail => lendu tail).
+
+Lemma seq_lendu_subset :
+  forall (sub super: Disk) (offset length value: N),
+    seq_lendu 
 
 Fixpoint listN_Byte_eqb (l r: list (N*Byte)) := match (l, r) with
   | (nil, nil) => true
