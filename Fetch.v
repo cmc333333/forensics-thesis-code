@@ -63,3 +63,24 @@ Proof.
       apply N.eqb_eq in H. rewrite H. reflexivity.
     discriminate H.
 Qed.
+
+Lemma found_fmap_found : 
+  forall (A B: Type) (fetchA: @Fetch A) (fn: A -> B) (bval: B),
+    (fetchA _fmap_ fn) = Found bval ->
+      exists (aval: A), fetchA = Found aval /\ fn aval = bval.
+Proof.
+  intros.
+  destruct fetchA; [ | discriminate H | discriminate H].
+  exists a. injection H.
+  intros. auto.
+Qed.
+
+Lemma found_fflatmap_found : 
+  forall (A B: Type) (fetchA: @Fetch A) (fn: A -> @Fetch B) (bval: B),
+    (fetchA _fflatmap_ fn) = Found bval ->
+      exists (aval: A), fetchA = Found aval /\ fn aval = Found bval.
+Proof.
+  intros.
+  destruct fetchA; [ | discriminate H | discriminate H].
+  exists a. auto.
+Qed.

@@ -177,6 +177,50 @@ Proof.
   intros sub super superblock subset.
   unfold disk_subset in subset.
   unfold findAndParseSuperBlock.
+  intros.
+  repeat (
+    apply found_fflatmap_found in H; destruct H as [? [Hfield H]];
+      apply seq_lendu_shift_subset with (super := super) in Hfield; 
+      [| assumption];
+    rewrite Hfield; unfold fetch_flatmap at 1; clear Hfield).
+  apply found_fflatmap_found in H; destruct H as [? [Hfield H]];
+  apply seq_list_shift_subset with (super := super) in Hfield;
+    [| assumption].
+    rewrite Hfield; unfold fetch_flatmap at 1; clear Hfield.
+    apply found_fflatmap_found in H; destruct H as [? [Hfield H]];
+      apply seq_list_shift_subset with (super := super) in Hfield; 
+      [| assumption];
+    rewrite Hfield; unfold fetch_flatmap at 1; clear Hfield.
+    apply found_fflatmap_found in H; destruct H as [? [Hfield H]];
+      apply seq_list_shift_subset with (super := super) in Hfield; 
+      [| assumption];
+    rewrite Hfield; unfold fetch_flatmap at 1; clear Hfield.
+    apply found_fflatmap_found in H; destruct H as [? [Hfield H]];
+      apply seq_lendu_shift_subset with (super := super) in Hfield; 
+      [| assumption].
+    rewrite Hfield. unfold fetch_flatmap at 1; clear Hfield.
+    apply found_fflatmap_found in H. destruct H as [? [Hfield H]].
+    apply subset_shift with (super := super) in Hfield; [|assumption].
+    rewrite Hfield. unfold fetch_flatmap at 1. clear Hfield.
+    apply found_fflatmap_found in H. destruct H as [? [Hfield H]].
+    apply subset_shift with (super := super) in Hfield; [|assumption].
+    rewrite Hfield. unfold fetch_flatmap at 1. clear Hfield.
+  repeat (
+    apply found_fflatmap_found in H; destruct H as [? [Hfield H]];
+    apply seq_lendu_shift_subset with (super := super) in Hfield; [| assumption];
+    rewrite Hfield; unfold fetch_flatmap at 1; clear Hfield).
+  apply found_fflatmap_found in H. destruct H as [? [Hfield H]].
+  apply subset_shift with (super := super) in Hfield; [|assumption].
+  rewrite Hfield. unfold fetch_flatmap at 1. clear Hfield.
+  apply found_fflatmap_found in H; destruct H as [? [Hfield H]];
+  apply seq_lendu_shift_subset with (super := super) in Hfield; [| assumption];
+  rewrite Hfield; unfold fetch_flatmap at 1; clear Hfield.
+
+  apply found_fmap_found in H; destruct H as [? [Hfield H]];
+  apply seq_lendu_shift_subset with (super := super) in Hfield; [| assumption];
+  rewrite Hfield; unfold fetch_map at 1; clear Hfield.
+  rewrite H. auto.
+Qed.
 
 Definition blockSize (superblock: SuperBlock) :=
   N.shiftl 1024 superblock.(logBlockSize).
