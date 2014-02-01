@@ -49,3 +49,13 @@ Proof.
   intros offset byte.
   apply H.
 Qed.
+
+Lemma subset_shift_found:
+  forall (amount offset: N) (sub super: Disk) (val: Byte),
+    sub ⊆ super ->
+      (shift sub amount) offset = Found val ->
+        (shift super amount) offset = Found val.
+Proof.
+  intros.
+  apply subset_shift with (super := super) in H0; assumption.
+Qed.

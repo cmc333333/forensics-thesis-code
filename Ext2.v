@@ -168,6 +168,7 @@ Definition findAndParseSuperBlock (disk: Disk)
       firstMetaBg
   ))))))))))))))))))))))))))))))))))))))))))))).
 
+
 Lemma findAndParseSuperBlock_subset :
   forall (sub super:Disk) (superblock: SuperBlock),
     sub ⊆ super ->
@@ -175,51 +176,16 @@ Lemma findAndParseSuperBlock_subset :
         findAndParseSuperBlock super = Found superblock.
 Proof.
   intros sub super superblock subset.
-  unfold disk_subset in subset.
   unfold findAndParseSuperBlock.
-  intros.
-  repeat (
-    apply found_fflatmap_found in H; destruct H as [? [Hfield H]];
-      apply seq_lendu_shift_subset with (super := super) in Hfield; 
-      [| assumption];
-    rewrite Hfield; unfold fetch_flatmap at 1; clear Hfield).
-  apply found_fflatmap_found in H; destruct H as [? [Hfield H]];
-  apply seq_list_shift_subset with (super := super) in Hfield;
-    [| assumption].
-    rewrite Hfield; unfold fetch_flatmap at 1; clear Hfield.
-    apply found_fflatmap_found in H; destruct H as [? [Hfield H]];
-      apply seq_list_shift_subset with (super := super) in Hfield; 
-      [| assumption];
-    rewrite Hfield; unfold fetch_flatmap at 1; clear Hfield.
-    apply found_fflatmap_found in H; destruct H as [? [Hfield H]];
-      apply seq_list_shift_subset with (super := super) in Hfield; 
-      [| assumption];
-    rewrite Hfield; unfold fetch_flatmap at 1; clear Hfield.
-    apply found_fflatmap_found in H; destruct H as [? [Hfield H]];
-      apply seq_lendu_shift_subset with (super := super) in Hfield; 
-      [| assumption].
-    rewrite Hfield. unfold fetch_flatmap at 1; clear Hfield.
-    apply found_fflatmap_found in H. destruct H as [? [Hfield H]].
-    apply subset_shift with (super := super) in Hfield; [|assumption].
-    rewrite Hfield. unfold fetch_flatmap at 1. clear Hfield.
-    apply found_fflatmap_found in H. destruct H as [? [Hfield H]].
-    apply subset_shift with (super := super) in Hfield; [|assumption].
-    rewrite Hfield. unfold fetch_flatmap at 1. clear Hfield.
-  repeat (
-    apply found_fflatmap_found in H; destruct H as [? [Hfield H]];
-    apply seq_lendu_shift_subset with (super := super) in Hfield; [| assumption];
-    rewrite Hfield; unfold fetch_flatmap at 1; clear Hfield).
-  apply found_fflatmap_found in H. destruct H as [? [Hfield H]].
-  apply subset_shift with (super := super) in Hfield; [|assumption].
-  rewrite Hfield. unfold fetch_flatmap at 1. clear Hfield.
-  apply found_fflatmap_found in H; destruct H as [? [Hfield H]];
-  apply seq_lendu_shift_subset with (super := super) in Hfield; [| assumption];
-  rewrite Hfield; unfold fetch_flatmap at 1; clear Hfield.
-
-  apply found_fmap_found in H; destruct H as [? [Hfield H]];
-  apply seq_lendu_shift_subset with (super := super) in Hfield; [| assumption];
-  rewrite Hfield; unfold fetch_map at 1; clear Hfield.
-  rewrite H. auto.
+  unfold disk_subset in subset.
+  repeat (apply found_fflatmap_found_twice; [
+    intros ?;
+    try solve [
+      apply seq_lendu_shift_subset with (1:=subset)
+      || apply seq_list_shift_subset with (1:=subset)
+      || apply subset_shift_found with (1:=subset) ] 
+    | intro; intro ]). 
+  intros. assumption.
 Qed.
 
 Definition blockSize (superblock: SuperBlock) :=
@@ -263,6 +229,26 @@ Definition findAndParseGroupDescriptor
       gdFreeInodesCount
       usedDirsCount
   )))))).
+
+Lemma findAndParseGroupDescriptor_subset :
+  forall (sub super:Disk) (sb: SuperBlock) (groupId: N)
+         (groupDesc: GroupDescriptor),
+    sub ⊆ super ->
+      findAndParseGroupDescriptor sub sb groupId = Found groupDesc ->
+        findAndParseGroupDescriptor super sb groupId = Found groupDesc.
+Proof.
+  intros sub super sb groupId groupDesc subset.
+  unfold findAndParseGroupDescriptor.
+  unfold disk_subset in subset.
+  repeat (apply found_fflatmap_found_twice; [
+    intros ?;
+    try solve [
+      apply seq_lendu_shift_subset with (1:=subset)
+      || apply seq_list_shift_subset with (1:=subset)
+      || apply subset_shift_found with (1:=subset) ] 
+    | intro; intro ]). 
+  intros. assumption.
+Qed.
 
 
 (* ======= INode ======= *)
@@ -361,6 +347,27 @@ Definition findAndParseInode (disk: Disk)
         osd2
   )))))))))))))))))))))))))))))))).
 
+Lemma findAndParseInode_subset :
+  forall (sub super:Disk) (sb: SuperBlock) (gd: GroupDescriptor)
+         (inodeIndex: N) (inode: Inode),
+    sub ⊆ super ->
+      findAndParseInode sub sb gd inodeIndex = Found inode ->
+        findAndParseInode super sb gd inodeIndex = Found inode.
+Proof.
+  intros sub super sb gd inodeIndex inode subset.
+  unfold findAndParseInode.
+  unfold disk_subset in subset.
+  destruct (inodesCount sb <=? inodeIndex); [ auto|].
+  repeat (apply found_fflatmap_found_twice; [
+    intros ?;
+    try solve [
+      apply seq_lendu_shift_subset with (1:=subset)
+      || apply seq_list_shift_subset with (1:=subset)
+      || apply subset_shift_found with (1:=subset) ] 
+    | intro; intro ]). 
+  intros. assumption.
+Qed.
+
 
 (* ======= Fetch Arbitrary Bytes For An Inode ======= *)
 (* Recursive function for dealing with levels of indirection *)
@@ -387,6 +394,32 @@ Fixpoint walkIndirection (disk: Disk) (superblock: SuperBlock)
                       nextIndirectionLevel
     )
   end.
+
+Lemma walkIndirection_subset :
+  forall (sub super:Disk) (sb: SuperBlock) (blockNum indPos: N)
+         (indLevel: nat) (ba: BA),
+    sub ⊆ super ->
+      walkIndirection sub sb blockNum indPos indLevel = Found ba ->
+        walkIndirection super sb blockNum indPos indLevel = Found ba.
+Proof.
+  intros sub super sb blockNum indPos indLevel ba subset.
+  generalize blockNum indPos. clear blockNum indPos.
+  induction indLevel.
+  (* Zero Case *)
+  intros blockNum indPos.
+  unfold walkIndirection. apply seq_lendu_subset with (1:=subset).
+  (* Inductive Case *)
+  (* Unfold one level *)
+  intros blockNum indPos.
+  unfold walkIndirection. fold walkIndirection.
+  intros subH. 
+  apply found_fflatmap_found in subH.
+  destruct subH as [aval [Haval subH]].
+  apply seq_lendu_subset with (1:=subset) in Haval.
+  rewrite Haval.
+  unfold fetch_flatmap.
+  apply IHindLevel. assumption.
+Qed.
 
 
 Definition fetchInodeByte (disk: Disk) (superblock: SuperBlock) 
@@ -446,6 +479,44 @@ Definition fetchInodeByte (disk: Disk) (superblock: SuperBlock)
     ) _fflatmap_ (fun blockAddress =>
       disk (blockSize * blockAddress + (bytePos mod blockSize))
     ).
+
+Lemma fetchInodeByte_subset :
+  forall (sub super:Disk) (sb: SuperBlock) (inode: Inode) (bytePos: N)
+         (byte: Byte),
+    sub ⊆ super ->
+      fetchInodeByte sub sb inode bytePos = Found byte ->
+        fetchInodeByte super sb inode bytePos = Found byte.
+Proof.
+  intros sub super sb inode bytePos byte subset.
+  unfold fetchInodeByte.
+  destruct (size inode <=? bytePos); [ auto |].
+  destruct (bytePos / blockSize sb <=? 12).
+  (* Directly Addressable *)
+    destruct (nth_error (block inode) (N.to_nat (bytePos / blockSize sb)));
+      [| auto].
+     unfold fetch_flatmap. apply subset.
+  destruct (bytePos / blockSize sb <=? 12 + blockSize sb / 4).
+  (* One level of indirection *)
+    destruct (nth_error (block inode) 12); [| auto].
+    intros. 
+    apply found_fflatmap_found in H. destruct H as [aval [Haval H]].
+    apply walkIndirection_subset with (1:=subset) in Haval. rewrite Haval.
+    unfold fetch_flatmap. apply subset. assumption.
+  destruct (bytePos / blockSize sb <=?
+            12 + blockSize sb / 4 + blockSize sb * blockSize sb / 16); [| auto].
+  (* Two levels of indirection *)
+    destruct (nth_error (block inode) 13); [| auto].
+    intros. 
+    apply found_fflatmap_found in H. destruct H as [aval [Haval H]].
+    apply walkIndirection_subset with (1:=subset) in Haval. rewrite Haval.
+    unfold fetch_flatmap. apply subset. assumption.
+  (* Three levels of indirection *)
+    destruct (nth_error (block inode) 14); [| auto].
+    intros. 
+    apply found_fflatmap_found in H. destruct H as [aval [Haval H]].
+    apply walkIndirection_subset with (1:=subset) in Haval. rewrite Haval.
+    unfold fetch_flatmap. apply subset. assumption.
+Qed.
 
 
 (* ======= Delete ======= *)

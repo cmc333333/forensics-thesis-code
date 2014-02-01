@@ -3,6 +3,7 @@ default:
 	coqc Byte
 	coqc StringOps
 	coqc ByteData
+	coqc DiskSubset
 	coqc Util
 	coqc FileIds
 	coqc File

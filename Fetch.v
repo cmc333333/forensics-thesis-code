@@ -84,3 +84,19 @@ Proof.
   destruct fetchA; [ | discriminate H | discriminate H].
   exists a. auto.
 Qed.
+
+Lemma found_fflatmap_found_twice :
+  forall (A B: Type) (fetch1 fetch2: @Fetch A) (fn1 fn2: A -> @Fetch B)
+         (b: B),
+    (forall (a: A), fetch1 = Found a -> fetch2 = Found a) ->
+      (forall (a: A) (b: B), fn1 a = Found b -> fn2 a = Found b) ->
+        fetch1 _fflatmap_ fn1 = Found b ->
+          fetch2 _fflatmap_ fn2 = Found b.
+Proof.
+  intros.
+  apply found_fflatmap_found in H1.
+  destruct H1 as [aval [avalH fn1H]].
+  apply H in avalH. rewrite avalH.
+  apply H0 in fn1H.
+  simpl. assumption.
+Qed.
