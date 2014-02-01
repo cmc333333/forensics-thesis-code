@@ -41,13 +41,15 @@ Lemma fetchByte_subset :
       /\ (file @[- idx | sub] = Found byte
             -> file @[- idx | super] = Found byte).
 Proof.
-  intros file sub super idx byte.
-  intros subset. unfold disk_subset in subset.
-  split.
-    unfold fetchByte.
-    destruct file.(fileId).
-  left.
-
+  intros file.
+  induction file.(fileId); intros sub super idx byte subset.
+    (* Ext2 *)
+    split; simpl; apply Ext2.fileByte_subset with (1:=subset).
+    (* Tar *)
+    split; simpl; apply IHf; apply subset_shift with (1:=subset).
+    (* Mock *)
+    split; auto.
+Qed.
 
 
 Definition isOnDiskTry1 (file: File) (disk: Disk) :=
@@ -76,4 +78,16 @@ Proof.
   unfold isOnDisk_compute in H. unfold isOnDisk.
   destruct (fileId file) ; [ | contradict H; auto | contradict H; auto].
   apply feqb_reflection. auto.
+Qed.
+
+Lemma isOnDisk_subset :
+  forall (sub super: Disk) (file: File),
+    sub ⊆ super ->
+      isOnDisk file sub ->
+        isOnDisk file super.
+Proof.
+  intros sub super file subset.
+  unfold isOnDisk.
+  destruct file.(fileId); [| auto | auto].
+  apply Ext2.findAndParseFile_subset with (1:=subset).
 Qed.
