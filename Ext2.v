@@ -544,6 +544,22 @@ Definition parseDeleted (disk: Disk) (superblock: SuperBlock)
     end
   ).
 
+Lemma parseDeleted_subset :
+  forall (sub super:Disk) (sb: SuperBlock) (gd: GroupDescriptor)
+         (inodeIndex: N) (val: bool),
+    sub ⊆ super ->
+      parseDeleted sub sb gd inodeIndex = Found val ->
+        parseDeleted super sb gd inodeIndex = Found val.
+Proof.
+  intros sub super sb gd inodeIndex val subset.
+  unfold parseDeleted.
+  intros H. apply found_fmap_found in H.
+  destruct H as [aval [Haval H]].
+  apply subset in Haval. rewrite Haval.
+  unfold fetch_map.
+  rewrite H. reflexivity.
+Qed.
+
 Definition fileByte (disk: Disk) (inodeIndex offset: N)
   : @Fetch Byte :=
   (findAndParseSuperBlock disk) _fflatmap_ (fun superblock =>
@@ -557,6 +573,28 @@ Definition fileByte (disk: Disk) (inodeIndex offset: N)
     _fflatmap_ (fun inode =>
       fetchInodeByte disk superblock inode offset
   ))).
+
+Lemma fileByte_subset :
+  forall (sub super:Disk) (inodeIndex offset: N) (val: Byte),
+    sub ⊆ super ->
+      fileByte sub inodeIndex offset = Found val ->
+        fileByte super inodeIndex offset = Found val.
+Proof.
+  intros sub super inodeIndex offset val subset.
+  unfold fileByte.
+  intros H. 
+  apply found_fflatmap_found in H. destruct H as [sb [Hsb H]].
+  apply found_fflatmap_found in H. destruct H as [gd [Hgd H]].
+  apply found_fflatmap_found in H. destruct H as [inode [Hinode H]].
+  apply findAndParseSuperBlock_subset with (1:=subset) in Hsb.
+    rewrite Hsb. unfold fetch_flatmap at 1. 
+  apply findAndParseGroupDescriptor_subset with (1:=subset) in Hgd.
+    rewrite Hgd. unfold fetch_flatmap at 1.
+  apply findAndParseInode_subset with (1:=subset) in Hinode.
+    rewrite Hinode. unfold fetch_flatmap at 1.
+  apply fetchInodeByte_subset with (1:=subset) in H.
+  assumption.
+Qed.
 
 Definition findAndParseFile (disk: Disk) (inodeIndex: N) 
   : @Fetch File :=
@@ -581,3 +619,26 @@ Definition findAndParseFile (disk: Disk) (inodeIndex: N)
       (value inode.(dtime))
   )))).
 
+Lemma findAndParseFile_subset :
+  forall (sub super:Disk) (inodeIndex: N) (val: File),
+    sub ⊆ super ->
+      findAndParseFile sub inodeIndex = Found val ->
+        findAndParseFile super inodeIndex = Found val.
+Proof.
+  intros sub super inodeIndex val subset.
+  unfold findAndParseFile.
+  intros H. 
+  apply found_fflatmap_found in H. destruct H as [sb [Hsb H]].
+  apply found_fflatmap_found in H. destruct H as [gd [Hgd H]].
+  apply found_fflatmap_found in H. destruct H as [inode [Hinode H]].
+  apply found_fmap_found in H. destruct H as [deleted [Hdeleted H]].
+  apply findAndParseSuperBlock_subset with (1:=subset) in Hsb.
+    rewrite Hsb. unfold fetch_flatmap at 1. 
+  apply findAndParseGroupDescriptor_subset with (1:=subset) in Hgd.
+    rewrite Hgd. unfold fetch_flatmap at 1.
+  apply findAndParseInode_subset with (1:=subset) in Hinode.
+    rewrite Hinode. unfold fetch_flatmap at 1.
+  apply parseDeleted_subset with (1:=subset) in Hdeleted.
+    rewrite Hdeleted. unfold fetch_map at 1.
+  rewrite H. reflexivity.
+Qed.
