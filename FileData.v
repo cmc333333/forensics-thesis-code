@@ -37,18 +37,32 @@ Lemma fetchByte_subset :
   forall (file: File) (sub super: Disk) (idx: N) (byte: Byte),
     sub ⊆ super ->
       (file @[ idx | sub] = Found byte
-          -> file @[ idx | super] = Found byte)
-      /\ (file @[- idx | sub] = Found byte
-            -> file @[- idx | super] = Found byte).
+        -> file @[ idx | super] = Found byte).
 Proof.
   intros file.
   induction file.(fileId); intros sub super idx byte subset.
     (* Ext2 *)
-    split; simpl; apply Ext2.fileByte_subset with (1:=subset).
+    simpl. apply Ext2.fileByte_subset with (1:=subset).
     (* Tar *)
-    split; simpl; apply IHf; apply subset_shift with (1:=subset).
+    simpl. apply IHf; apply subset_shift with (1:=subset).
     (* Mock *)
-    split; auto.
+    auto.
+Qed.
+
+Lemma fetchByte_subset_neg :
+  forall (file: File) (sub super: Disk) (idx: N) (byte: Byte),
+    sub ⊆ super ->
+      (file @[- idx | sub] = Found byte
+          -> file @[- idx | super] = Found byte).
+Proof.
+  intros file.
+  induction file.(fileId); intros sub super idx byte subset.
+    (* Ext2 *)
+    simpl. apply Ext2.fileByte_subset with (1:=subset).
+    (* Tar *)
+    simpl. apply IHf; apply subset_shift with (1:=subset).
+    (* Mock *)
+    auto.
 Qed.
 
 

@@ -2,6 +2,7 @@ Require Import Coq.Strings.Ascii.
 Require Import Coq.ZArith.ZArith.
 
 Require Import ByteData.
+Require Import DiskSubset.
 Require Import Fetch.
 Require Import File.
 Require Import FileData.
@@ -36,6 +37,20 @@ Proof.
   apply Byte.feqb_reflection. auto.
 Qed.
 
+Definition isJpeg_subset:
+  forall (sub super: Disk) (file: File),
+    sub ⊆ super ->
+      isJpeg file sub -> isJpeg file super.
+Proof.
+  intros sub super file subset.
+  unfold isJpeg.
+  intros H. destruct H as [H0 [H1 [Hn2 Hn1]]].
+  split. apply fetchByte_subset with (1:=subset). auto.
+  split. apply fetchByte_subset with (1:=subset). auto.
+  split. apply fetchByte_subset_neg with (1:=subset). auto.
+         apply fetchByte_subset_neg with (1:=subset). auto.
+Qed.
+
 Definition isGzip (file: File) (disk: Disk) :=
      file @[ 0 | disk ] = Found "031"
   /\ file @[ 1 | disk ] = Found "139" 
@@ -56,6 +71,19 @@ Proof.
   split. apply Byte.feqb_reflection. auto.
   split. apply Byte.feqb_reflection. auto.
   apply Byte.feqb_reflection. auto.
+Qed.
+
+Definition isGzip_subset:
+  forall (sub super: Disk) (file: File),
+    sub ⊆ super ->
+      isGzip file sub -> isGzip file super.
+Proof.
+  intros sub super file subset.
+  unfold isGzip.
+  intros H. destruct H as [H0 [H1 H2]].
+  split. apply fetchByte_subset with (1:=subset). auto.
+  split. apply fetchByte_subset with (1:=subset). auto.
+         apply fetchByte_subset with (1:=subset). auto.
 Qed.
 
 Definition isElf (file: File) (disk: Disk) :=
@@ -82,6 +110,20 @@ Proof.
   split. apply Byte.feqb_reflection. auto.
   split. apply Byte.feqb_reflection. auto.
   apply Byte.feqb_reflection. auto.
+Qed.
+
+Definition isElf_subset:
+  forall (sub super: Disk) (file: File),
+    sub ⊆ super ->
+      isElf file sub -> isElf file super.
+Proof.
+  intros sub super file subset.
+  unfold isElf.
+  intros H. destruct H as [H0 [H1 [H2 H3]]].
+  split. apply fetchByte_subset with (1:=subset). auto.
+  split. apply fetchByte_subset with (1:=subset). auto.
+  split. apply fetchByte_subset with (1:=subset). auto.
+         apply fetchByte_subset with (1:=subset). auto.
 Qed.
 
 

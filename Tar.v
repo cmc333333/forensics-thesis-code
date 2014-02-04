@@ -5,9 +5,11 @@ Require Import Coq.ZArith.ZArith.
 
 Require Import Byte.
 Require Import ByteData.
+Require Import DiskSubset.
 Require Import Fetch.
 Require Import File.
 Require Import FileData.
+Require Import FileIds.
 Require Import FileNames.
 Require Import StringOps.
 Require Import Util.
@@ -29,33 +31,52 @@ Fixpoint fromOctalAscii (bytes: list Byte) : Exc N :=
     end
   end.
 
+Definition diskIsFound (disk: Disk) (nextVal: N) :=
+  match (disk nextVal) with
+  | Found _ => true
+  | _ => false
+  end.
+
+Lemma diskIsFound_subset:
+  forall (sub super: Disk) (offset val: N),
+    sub ⊆ super ->
+      diskIsFound sub offset = true ->
+        diskIsFound super offset = true.
+Proof.
+  intros sub super offset val subset.
+  unfold diskIsFound. intros H.
+  destruct (sub offset) eqn:found.
+    apply subset in found. rewrite found. reflexivity.
+    discriminate H.
+    discriminate H.
+Qed.
+
 Definition parseFileName (bytes: ByteData) :=
-  let firstHundredBytes := map bytes (0 upto 100) in
-  let perByte := fun (acc: @Fetch (list Byte) )
-                     (next: @Fetch Byte) =>
-    match (acc, next) with
-    | (Found (hd :: tl), Found next) =>
-        if (ascii_eqb hd Ascii.zero)  (* Null *)
+  let perByte := fun (acc: @Fetch (list Byte))
+                     (next: N) =>
+    match acc with
+    | Found (h :: t) =>
+      if (ascii_eqb h Ascii.zero) (* Null *)
         then acc
-        else Found (next :: hd :: tl)
-    | (Found _, Found next) =>
-        Found (next :: nil)
-    | (Found (hd :: tl), MissingAt idx) =>
-        if (ascii_eqb hd Ascii.zero)  (* Null *)
-        then acc
-        else MissingAt idx
-    | (Found (hd :: tl), ErrorString str) =>
-        if (ascii_eqb hd Ascii.zero)  (* Null *)
-        then acc
-        else ErrorString str
-    | (other, _) => other
+        else match (bytes next) with
+        | Found nextVal => Found (nextVal :: h :: t)
+        | MissingAt idx => MissingAt idx
+        | ErrorString str => ErrorString str
+        end
+    | Found _ => match (bytes next) with
+      | Found nextVal => Found (nextVal :: nil)
+      | MissingAt idx => MissingAt idx
+      | ErrorString str => ErrorString str
+      end
+    | other => other
     end in
-  (fold_left perByte firstHundredBytes (Found nil)) 
+  (fold_left perByte (0 upto 100) (Found nil)) 
     _fmap_ (fun byteList => match byteList with
     (* Strip off the null character *)
     | hd :: tl => list2string (rev tl)
     | _ => EmptyString
     end).
+
 
 Definition parseFileSize (bytes: ByteData) :=
   (seq_list bytes 124 11)
@@ -74,6 +95,22 @@ Definition parseFileNameAndSize (tar: File) (offset: N)
   (parseFileSize byteData) _fmap_ (fun size =>
     (name, size)
   )).
+
+(*
+Lemma parseFileNameAndSize_subset:
+  forall (sub super: Disk) (tar: File) (offset: N) (val: string*N),
+    sub ⊆ super ->
+      parseFileNameAndSize tar offset sub = Found val ->
+        parseFileNameAndSize tar offset super = Found val.
+Proof.
+  intros sub super tar offset val subset.
+  unfold parseFileNameAndSize.
+  intros H.
+  apply found_fflatmap_found in H. destruct H as [fileName [HfileName H]].
+  apply found_fmap_found in H. destruct H as [size [Hsize H]].
+  rewrite fetchByte_subset in HfileName.
+*)
+
 
 Definition recFileNameFrom (nextCall: N -> list string) 
   (tar: File) (remaining: N) (disk: Disk) : list string :=
