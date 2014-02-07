@@ -51,31 +51,81 @@ Proof.
     discriminate H.
 Qed.
 
-Definition parseFileName (bytes: ByteData) :=
-  let perByte := fun (acc: @Fetch (list Byte))
-                     (next: N) =>
-    match acc with
-    | Found (h :: t) =>
-      if (ascii_eqb h Ascii.zero) (* Null *)
-        then acc
-        else match (bytes next) with
-        | Found nextVal => Found (nextVal :: h :: t)
-        | MissingAt idx => MissingAt idx
-        | ErrorString str => ErrorString str
-        end
-    | Found _ => match (bytes next) with
-      | Found nextVal => Found (nextVal :: nil)
-      | MissingAt idx => MissingAt idx
-      | ErrorString str => ErrorString str
+Definition parseFileName (tar: File) (offset: N) (disk: Disk): @Fetch string :=
+  N.peano_rect
+  (fun _ => N -> @Fetch string) (* Signature of recursive calls *)
+  (fun (_: N) => Found EmptyString) (* Base case -- empty file *)
+  (fun (prev: N) (rec: N -> @Fetch string) (idx: N) =>
+    (* Recursive case -- more file remaining *)
+    match (tar @[ offset + idx | disk ]) with
+    | Found byte => 
+      if (ascii_eqb byte Ascii.zero) (* Null *)
+      then Found EmptyString
+      else match (rec (idx + 1)) with
+      | Found rest => Found (String byte rest)
+      | MissingAt val => MissingAt val
+      | ErrorString val => ErrorString val
       end
-    | other => other
-    end in
-  (fold_left perByte (0 upto 100) (Found nil)) 
-    _fmap_ (fun byteList => match byteList with
-    (* Strip off the null character *)
-    | hd :: tl => list2string (rev tl)
-    | _ => EmptyString
-    end).
+    | MissingAt val => MissingAt val
+    | ErrorString val => ErrorString val
+    end)
+  100 0.
+
+Lemma parseFileName_subset:
+  forall (sub super: Disk) (tar: File) (offset: N) (val: string),
+    sub ⊆ super ->
+      parseFileName tar offset sub = Found val ->
+        parseFileName tar offset super = Found val.
+Proof.
+  unfold parseFileName.
+  apply N.peano_ind with (n := 100).
+    simpl; auto.
+  intros n H sub super tar offset val subset H1.
+  rewrite N.peano_rect_succ.
+  rewrite N.peano_rect_succ in H1.
+  destruct (tar @[ offset + 0 | sub ]) eqn:TarAt.
+  apply fetchByte_subset with (1:=subset) in TarAt.
+  rewrite TarAt. 
+  rewrite <- H1. simpl.
+  (*
+  destruct (ascii_eqb b zero). assumption.
+  simpl in H1. simpl.
+  rewrite <- H1. discriminate.
+  apply H in H1.
+  assumption.
+
+  apply N.recursion_succ.
+  destruct val.
+  apply N.peano_rect_base.
+  apply N.peano_ind with (n := 100).
+    intros sub super tar offset val subset.
+    simpl; auto.
+  intros sub super tar offset.
+  revert sub 
+  intros sub super tar offset str subset.
+  revert sub super 
+  unfold parseFileName.
+  apply N.peano_ind with (n := 100).
+  simpl. auto.
+  intros. rewrite N.peano_rect_succ.
+  assert (exists v:Byte, tar @[ offset + 0 | sub ] = Found v).
+  admit.
+  destruct H1.
+  apply fetchByte_subset with (1:=subset) in H1.
+  rewrite H1. simpl.
+  destruct (ascii_eqb x zero).
+  remember (tar @[ offset + 0 | sub]).
+  destruct f.
+    eauto.
+  simpl in H0.
+
+  remember (tar @[offset + 0 | 
+  simpl.
+  destruct (tar @[ offset + 0 | super]).
+  apply
+Qed.
+*)
+Admitted.
 
 
 Definition parseFileSize (bytes: ByteData) :=
@@ -91,7 +141,7 @@ Definition parseFileNameAndSize (tar: File) (offset: N)
   : @Fetch (string*N) :=
   let byteData := shift (fetchByte tar.(fileId) disk) 
                         offset in
-  (parseFileName byteData) _fflatmap_ (fun name =>
+  (parseFileName tar offset disk) _fflatmap_ (fun name =>
   (parseFileSize byteData) _fmap_ (fun size =>
     (name, size)
   )).
