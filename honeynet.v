@@ -151,23 +151,14 @@ Qed.
 Definition maliciousFileName1 := "last/ssh".
 Definition maliciousFileName2 := "last/top".
 
-(* Turn this into a  Investigation of Computation of Forensics; it's easy to
-make definitions, but those don't work well because we need proof by reflexion
-
-Reflection - makes tactics smaller; makes proof terms smaller
-*)
-
 Lemma borland_honeynet_file:
   honeynet_image_partial ⊆ OriginalDisk ->
-    (gunzip file23) = gunzipped_partial ->
+    gunzipped_partial f⊆ (gunzip file23 OriginalDisk) ->
       borland_rootkit OriginalDisk.
   Proof.
-    intros subset H_gunzip.
-    apply borland_rootkit_subset with (1:=subset).
-    revert H_gunzip.
-    apply borland_reflection 
-      with (file := file23) (gunzipped := gunzipped_partial)
-           (filename1 := maliciousFileName1) 
+    apply borland_rootkit_witness_subset.
+    apply borland_witness_param_reflection
+      with (filename1 := maliciousFileName1) 
            (filename2 := maliciousFileName2).
     vm_compute. reflexivity.
 Qed.

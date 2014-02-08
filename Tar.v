@@ -78,6 +78,33 @@ Proof.
   assumption.
 Qed.
 
+Lemma parseFileName_fsubset:
+  forall (sub super: File) (disk: Disk) (offset: N) (val: string),
+    sub f⊆ super ->
+      parseFileName sub offset disk = Found val ->
+        parseFileName super offset disk = Found val.
+Proof.
+  unfold parseFileName.
+  generalize 0.
+  apply N.peano_ind with (n := 100).
+    simpl; auto.
+  intros n H m sub super disk offset val subset H1.
+  rewrite N.peano_rect_succ.
+  rewrite N.peano_rect_succ in H1.
+  destruct (sub @[ offset + m | disk ]) eqn:TarAt;
+      [| discriminate H1 | discriminate H1].
+  apply fetchByte_fsubset with (1:=subset) in TarAt.
+  rewrite TarAt. 
+  destruct (ascii_eqb b zero) eqn:IsZero.
+  assumption.
+  match goal with   (* match helps us reference subterms in the goal *)
+    | [ _: match ?peano with _ => _ end = _ |- _] => 
+        destruct peano eqn:Hpeano; [| discriminate H1 | discriminate H1]
+  end.
+  apply H with (1:=subset) in Hpeano. rewrite Hpeano. 
+  assumption.
+Qed.
+
 
 Definition parseFileSize (tar: File) (offset: N) (disk: Disk): @Fetch N :=
   (tar @[ offset + 124 | disk ]) _fflatmap_ (fun byte0 =>
@@ -109,7 +136,7 @@ Definition parseFileSize (tar: File) (offset: N) (disk: Disk): @Fetch N :=
     end))))))))))).
 
 Lemma parseFileSize_subset:
-  forall (sub super: Disk) (tar: File) (offset: N) (val: N),
+  forall (sub super: Disk) (tar: File) (offset val: N),
     sub ⊆ super ->
       parseFileSize tar offset sub = Found val ->
         parseFileSize tar offset super = Found val.
@@ -119,6 +146,21 @@ Proof.
   unfold disk_subset in subset.
   repeat (apply found_fflatmap_found_twice; [
     intros ?; apply fetchByte_subset with (1:=subset)
+    | intro; intro]).
+  intros. assumption.
+Qed.
+
+Lemma parseFileSize_fsubset:
+  forall (sub super: File) (disk: Disk) (offset val: N),
+    sub f⊆ super ->
+      parseFileSize sub offset disk = Found val ->
+        parseFileSize super offset disk = Found val.
+Proof.
+  intros sub super tar offset val subset.
+  unfold parseFileSize.
+  unfold disk_subset in subset.
+  repeat (apply found_fflatmap_found_twice; [
+    intros ?; apply fetchByte_fsubset with (1:=subset)
     | intro; intro]).
   intros. assumption.
 Qed.
@@ -145,6 +187,24 @@ Proof.
   apply parseFileName_subset with (1:=subset) in HfileName.
   rewrite HfileName. unfold fetch_flatmap at 1.
   apply parseFileSize_subset with (1:=subset) in Hsize.
+  rewrite Hsize. unfold fetch_map at 1.
+  rewrite H. auto.
+Qed.
+
+Lemma parseFileNameAndSize_fsubset:
+  forall (sub super: File) (disk: Disk) (offset: N) (val: string*N),
+    sub f⊆ super ->
+      parseFileNameAndSize sub offset disk = Found val ->
+        parseFileNameAndSize super offset disk = Found val.
+Proof.
+  intros sub super tar offset val subset.
+  unfold parseFileNameAndSize.
+  intros H.
+  apply found_fflatmap_found in H. destruct H as [fileName [HfileName H]].
+  apply found_fmap_found in H. destruct H as [size [Hsize H]].
+  apply parseFileName_fsubset with (1:=subset) in HfileName.
+  rewrite HfileName. unfold fetch_flatmap at 1.
+  apply parseFileSize_fsubset with (1:=subset) in Hsize.
   rewrite Hsize. unfold fetch_map at 1.
   rewrite H. auto.
 Qed.
@@ -223,6 +283,53 @@ Proof.
   assumption.
 Qed.
 
+Lemma parseFileNames_fsubset:
+  forall (sub super: File) (disk: Disk) (val: list string),
+    sub f⊆ super ->
+      parseFileNames sub disk = Found val ->
+        parseFileNames super disk = Found val.
+Proof.
+  unfold parseFileNames. 
+  intros sub super disk val subset.
+  revert disk val.
+  assert (sub f⊆ super) as subset2; [assumption |].
+  unfold file_subset in subset2.
+  destruct subset2 as [Hid Heq]. destruct Heq as [HfileSize Heq].
+  generalize 0.
+  rewrite HfileSize.
+  apply N.peano_ind with (n := fileSize super).
+    simpl; auto.
+  intros n H m disk val H1.
+  rewrite N.peano_rect_succ in H1.
+  unfold recFileNameFrom at 1 in H1.
+  rewrite HfileSize in H1.
+  rewrite N.peano_rect_succ.
+  unfold recFileNameFrom at 1.
+  destruct (fileSize super <=? m) eqn:H_fileSize.
+    assumption.
+  destruct (parseFileNameAndSize sub m disk) eqn:H_fileNameAndSize;
+    [| discriminate H1 | discriminate H1].
+  destruct p as [fileName fileSize]. 
+  apply parseFileNameAndSize_fsubset with (1:=subset) in H_fileNameAndSize.
+  rewrite H_fileNameAndSize.
+  destruct (fileSize mod 512 =? 0) eqn:H_fsize_mod_512.
+  simpl. simpl in H1.
+  match goal with   (* match helps us reference subterms in the goal *)
+    | [ _: match ?peano with _ => _ end = _ |- _] => 
+        destruct peano eqn:Hpeano; [| discriminate H1 | discriminate H1]
+  end.
+  apply H in Hpeano. rewrite Hpeano.
+  assumption.
+  cbv zeta. cbv zeta in H1.
+  destruct (N.peano_rect (fun _ : N => N -> Fetch) (fun _ : N => Found nil)
+                         (fun (_ : N) (rec : N -> Fetch) (offset : N) =>
+                         recFileNameFrom rec sub offset disk) n
+                         (m + 512 * (2 + fileSize / 512))) eqn:Hpeano;
+    [|discriminate H1 | discriminate H1].
+  apply H in Hpeano. rewrite Hpeano.
+  assumption.
+Qed.
+
 Definition looksLikeRootkit (file: File) (disk: Disk) :=
   match (parseFileNames file disk) with
   | Found fileNames =>
@@ -286,6 +393,22 @@ Proof.
   intros H.
   destruct (parseFileNames file sub) eqn:H_parseFileNames.
     apply parseFileNames_subset with (1:=subset) in H_parseFileNames.
+    rewrite H_parseFileNames. assumption.
+  contradict H.
+  contradict H.
+Qed.
+
+Lemma looksLikeRootkit_fsubset:
+  forall (sub super: File) (disk: Disk),
+    sub f⊆ super ->
+      looksLikeRootkit sub disk ->
+        looksLikeRootkit super disk.
+Proof.
+  intros sub super disk subset.
+  unfold looksLikeRootkit.
+  intros H.
+  destruct (parseFileNames sub disk) eqn:H_parseFileNames.
+    apply parseFileNames_fsubset with (1:=subset) in H_parseFileNames.
     rewrite H_parseFileNames. assumption.
   contradict H.
   contradict H.

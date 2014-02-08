@@ -16,12 +16,34 @@ Definition findInPairList (data: list (N*Byte)) (key: N) :=
   | None => MissingAt key
   end.
 
-Fixpoint fetchByte (fileId: FileId) (disk: Disk)
+
+Definition fileId_subset (sub super: FileId) :=
+  match (sub, super) with
+  | (Ext2Id _, Ext2Id _) => sub = super
+  | (MockId subData, MockId superData) =>
+      forall (idx: N) (byte: Byte),
+        (findInPairList subData idx) = Found byte ->
+          (findInPairList superData idx) = Found byte
+  | _ => False
+  end.
+
+Definition file_subset (sub super: File) :=
+  fileId_subset sub.(fileId) super.(fileId)
+  /\ sub.(fileSize) = super.(fileSize)
+  /\ sub.(deleted) = super.(deleted)
+  /\ sub.(lastAccess) = super.(lastAccess)
+  /\ sub.(lastModification) = super.(lastModification)
+  /\ sub.(lastCreated) = super.(lastCreated)
+  /\ sub.(lastDeleted) = super.(lastDeleted).
+
+Infix "f⊆" := file_subset (at level 50).
+
+
+Definition fetchByte (fileId: FileId) (disk: Disk)
   : N->@Fetch Byte := 
   match fileId with
   | Ext2Id inodeIndex => Ext2.fileByte disk inodeIndex
   | MockId data => findInPairList data
-  | TarId fs shiftAmt => fetchByte fs (shift disk shiftAmt)
   end.
 
 (* Cleaner notation for file access. *)
@@ -40,13 +62,30 @@ Lemma fetchByte_subset :
         -> file @[ idx | super] = Found byte).
 Proof.
   intros file.
-  induction file.(fileId); intros sub super idx byte subset.
+  destruct file.(fileId); intros sub super idx byte subset.
     (* Ext2 *)
     simpl. apply Ext2.fileByte_subset with (1:=subset).
-    (* Tar *)
-    simpl. apply IHf; apply subset_shift with (1:=subset).
     (* Mock *)
     auto.
+Qed.
+
+Lemma fetchByte_fsubset :
+  forall (disk: Disk) (sub super: File) (idx: N) (byte: Byte),
+    sub f⊆ super ->
+      (sub @[ idx | disk ] = Found byte
+        -> super @[ idx | disk ] = Found byte).
+Proof.
+  intros disk sub super idx byte subset.
+  unfold file_subset in subset. destruct subset as [Hid Heq].
+  induction sub.(fileId). 
+    (* Ext2 *)
+    destruct super.(fileId); [ | contradict Hid ].
+    rewrite Hid. auto.
+    (* Mock *)
+    destruct super.(fileId); [contradict Hid |].
+    unfold fileId_subset in Hid.
+    unfold fetchByte.
+    apply Hid.
 Qed.
 
 Lemma fetchByte_subset_neg :
@@ -56,15 +95,33 @@ Lemma fetchByte_subset_neg :
           -> file @[- idx | super] = Found byte).
 Proof.
   intros file.
-  induction file.(fileId); intros sub super idx byte subset.
+  destruct file.(fileId); intros sub super idx byte subset.
     (* Ext2 *)
     simpl. apply Ext2.fileByte_subset with (1:=subset).
-    (* Tar *)
-    simpl. apply IHf; apply subset_shift with (1:=subset).
     (* Mock *)
     auto.
 Qed.
 
+Lemma fetchByte_fsubset_neg :
+  forall (disk: Disk) (sub super: File) (idx: N) (byte: Byte),
+    sub f⊆ super ->
+      (sub @[- idx | disk ] = Found byte
+        -> super @[- idx | disk ] = Found byte).
+Proof.
+  intros disk sub super idx byte subset.
+  unfold file_subset in subset. destruct subset as [Hid Heq].
+  destruct Heq as [HfileSize Heq].
+  rewrite HfileSize.
+  induction sub.(fileId). 
+    (* Ext2 *)
+    destruct super.(fileId); [ | contradict Hid ].
+    rewrite Hid. auto.
+    (* Mock *)
+    destruct super.(fileId); [contradict Hid |].
+    unfold fileId_subset in Hid.
+    simpl.
+    apply Hid.
+Qed.
 
 Definition isOnDiskTry1 (file: File) (disk: Disk) :=
   exists (start: N), forall (i: N),
@@ -90,7 +147,7 @@ Lemma isOnDisk_reflection (file: File) (disk: Disk) :
 Proof.
   intros.
   unfold isOnDisk_compute in H. unfold isOnDisk.
-  destruct (fileId file) ; [ | contradict H; auto | contradict H; auto].
+  destruct (fileId file) ; [| contradict H; auto].
   apply feqb_reflection. auto.
 Qed.
 
@@ -102,6 +159,6 @@ Lemma isOnDisk_subset :
 Proof.
   intros sub super file subset.
   unfold isOnDisk.
-  destruct file.(fileId); [| auto | auto].
+  destruct file.(fileId); [| auto ].
   apply Ext2.findAndParseFile_subset with (1:=subset).
 Qed.
