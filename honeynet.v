@@ -136,8 +136,10 @@ Definition file48284 := mkFile (Ext2Id 48284) 42736 true
                                (Some 984707102).
 
 Lemma lee_honeynet_file:
-  Timeline.isSound lee_timeline honeynet_image_partial.
+  honeynet_image_partial ⊆ OriginalDisk ->
+    Timeline.isSound lee_timeline OriginalDisk.
 Proof.
+  intros subset. apply isSound_subset with (1:=subset).
   set (files := file23 :: file23 :: file30130 :: file30188 
                 :: file2056 :: file30191 :: file2055
                 :: file48284 :: file2057 :: file30131

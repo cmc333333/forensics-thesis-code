@@ -1,10 +1,7 @@
-(* positive negative examples for what doesn't work and what does; e.g. coqchk
-*)
-
-
 Require Import Coq.ZArith.ZArith.
 
 Require Import ByteData.
+Require Import DiskSubset.
 Require Import File.
 Require Import FileData.
 Require Import FileIds.
@@ -129,6 +126,23 @@ Proof.
             | apply optN_eqb_reflection; auto]].
 Qed. 
 
+Lemma foundOn_subset:
+  forall (sub super: Disk) (event: Event),
+    sub ⊆ super ->
+      foundOn event sub ->
+        foundOn event super.
+Proof.
+  intros sub super event subset.
+  unfold foundOn.
+  intros H.
+  destruct event; repeat (
+    destruct H as [file H]; exists file;
+    destruct H; split; 
+      [ apply isOnDisk_subset with (1:=subset); assumption
+      | assumption]).
+Qed.
+
+
 Definition isSoundPair (disk: Disk) (eventPair: Event*Event) :=
   let (lhsEvent, rhsEvent) := eventPair in
   foundOn lhsEvent disk
@@ -165,10 +179,39 @@ Proof.
     auto.
 Qed.
 
+Lemma isSoundPair_subset:
+  forall (sub super: Disk) (eventPair: Event*Event),
+    sub ⊆ super ->
+      isSoundPair sub eventPair ->
+        isSoundPair super eventPair.
+Proof.
+  intros sub super eventPair subset.
+  destruct eventPair as [lhs rhs].
+  unfold isSoundPair.
+  intros H. destruct H. destruct H0.
+  split. apply foundOn_subset with (1:=subset). assumption.
+  split. apply foundOn_subset with (1:=subset). assumption.
+         assumption.
+Qed.
+
+
 Definition isSound (timeline: Timeline) (disk: Disk) :=
   let staggeredEvents := combine timeline (skipn 1 timeline) in
   forall (pair: Event*Event),
     In pair staggeredEvents -> isSoundPair disk pair.
+
+Lemma isSound_subset:
+  forall (sub super: Disk) (timeline: Timeline),
+    sub ⊆ super ->
+      isSound timeline sub ->
+        isSound timeline super.
+Proof.
+  intros sub super timeline subset.
+  unfold isSound.
+  intros H pair Hin.
+  apply isSoundPair_subset with (1:=subset).
+  apply H. assumption.
+Qed.
 
 Definition isSound_tmp (timeline: Timeline) (disk: Disk) :=
   exists (files: list File),
