@@ -4,6 +4,7 @@ Require Import Coq.Strings.String.
 Require Import Coq.ZArith.ZArith.
 
 Require Import ByteData.
+Require Import DiskSubset.
 Require Import Ext2.
 Require Import Fetch.
 Require Import File.
@@ -155,9 +156,13 @@ Reflection - makes tactics smaller; makes proof terms smaller
 *)
 
 Lemma borland_honeynet_file:
-  (gunzip file23) = gunzipped_partial 
-    -> borland_rootkit honeynet_image_partial.
+  honeynet_image_partial ⊆ OriginalDisk ->
+    (gunzip file23) = gunzipped_partial ->
+      borland_rootkit OriginalDisk.
   Proof.
+    intros subset H_gunzip.
+    apply borland_rootkit_subset with (1:=subset).
+    revert H_gunzip.
     apply borland_reflection 
       with (file := file23) (gunzipped := gunzipped_partial)
            (filename1 := maliciousFileName1) 

@@ -1,6 +1,7 @@
 Require Import Coq.Strings.String.
 
 Require Import ByteData.
+Require Import DiskSubset.
 Require Import File.
 Require Import FileData.
 Require Import FileTypes.
@@ -41,4 +42,21 @@ Proof.
   split. unfold isDeleted. auto.
   split. apply isGzip_reflection. auto.
   rewrite H0. apply looksLikeRootkit_reflection in H1. auto.
+Qed.
+
+Lemma borland_rootkit_subset:
+  forall (sub super: Disk),
+    sub ⊆ super ->
+      borland_rootkit sub ->
+        borland_rootkit super.
+Proof.
+  intros sub super subset.
+  unfold borland_rootkit.
+  intros H.
+  destruct H as [file H]. exists file.
+  destruct H. destruct H0. destruct H1.
+  split. apply isOnDisk_subset with (1:=subset). assumption.
+  split. assumption.
+  split. apply isGzip_subset with (1:=subset). assumption.
+         apply looksLikeRootkit_subset with (1:=subset). assumption.
 Qed.
