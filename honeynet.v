@@ -136,10 +136,12 @@ Definition file48284 := mkFile (Ext2Id 48284) 42736 true
                                (Some 984707102).
 
 Lemma lee_honeynet_file:
-  honeynet_image_partial ⊆ OriginalDisk ->
-    Timeline.isSound lee_timeline OriginalDisk.
+  forall (original_disk: Disk),
+    honeynet_image_partial ⊆ original_disk ->
+      Timeline.isSound lee_timeline original_disk.
 Proof.
-  intros subset. apply isSound_subset with (1:=subset).
+  intros original_disk subset.
+  apply isSound_subset with (1:=subset).
   set (files := file23 :: file23 :: file30130 :: file30188 
                 :: file2056 :: file30191 :: file2055
                 :: file48284 :: file2057 :: file30131
@@ -152,10 +154,12 @@ Definition maliciousFileName1 := "last/ssh".
 Definition maliciousFileName2 := "last/top".
 
 Lemma borland_honeynet_file:
-  honeynet_image_partial ⊆ OriginalDisk ->
-    gunzipped_partial f⊆ (gunzip file23 OriginalDisk) ->
-      borland_rootkit OriginalDisk.
+  forall (original_disk: Disk),
+    honeynet_image_partial ⊆ original_disk ->
+      gunzipped_partial f⊆ (gunzip file23 original_disk) ->
+        borland_rootkit original_disk.
   Proof.
+    intros original_disk.
     apply borland_rootkit_witness_subset.
     apply borland_witness_param_reflection
       with (filename1 := maliciousFileName1) 

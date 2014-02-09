@@ -4,8 +4,6 @@ Require Import Byte.
 Require Import ByteData.
 Require Import Fetch.
 
-Variable OriginalDisk: Disk.
-
 Definition disk_subset (sub super: Disk) :=
   forall (offset: N) (byte: Byte),
     sub offset = Found byte -> super offset = Found byte.
