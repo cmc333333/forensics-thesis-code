@@ -1,0 +1,98 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+<link href="coqdoc.css" rel="stylesheet" type="text/css"/>
+<title>DiskSubset</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library DiskSubset</h1>
+
+<div class="code">
+<span class="id" type="keyword">Require</span> <span class="id" type="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.ZArith.ZArith.html#"><span class="id" type="library">Coq.ZArith.ZArith</span></a>.<br/>
+
+<br/>
+<span class="id" type="keyword">Require</span> <span class="id" type="keyword">Import</span> <a class="idref" href="Byte.html#"><span class="id" type="library">Byte</span></a>.<br/>
+<span class="id" type="keyword">Require</span> <span class="id" type="keyword">Import</span> <a class="idref" href="ByteData.html#"><span class="id" type="library">ByteData</span></a>.<br/>
+<span class="id" type="keyword">Require</span> <span class="id" type="keyword">Import</span> <a class="idref" href="Fetch.html#"><span class="id" type="library">Fetch</span></a>.<br/>
+
+<br/>
+<span class="id" type="keyword">Definition</span> <a name="disk_subset"><span class="id" type="definition">disk_subset</span></a> (<span class="id" type="var">sub</span> <span class="id" type="var">super</span>: <a class="idref" href="ByteData.html#Disk"><span class="id" type="definition">Disk</span></a>) :=<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">forall</span> (<span class="id" type="var">offset</span>: <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Numbers.BinNums.html#N"><span class="id" type="inductive">N</span></a>) (<span class="id" type="var">byte</span>: <a class="idref" href="Byte.html#Byte"><span class="id" type="definition">Byte</span></a>),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="DiskSubset.html#sub"><span class="id" type="variable">sub</span></a> <a class="idref" href="DiskSubset.html#offset"><span class="id" type="variable">offset</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Logic.html#:type_scope:x_'='_x"><span class="id" type="notation">=</span></a> <a class="idref" href="Fetch.html#Found"><span class="id" type="constructor">Found</span></a> <a class="idref" href="DiskSubset.html#byte"><span class="id" type="variable">byte</span></a> -&gt; <a class="idref" href="DiskSubset.html#super"><span class="id" type="variable">super</span></a> <a class="idref" href="DiskSubset.html#offset"><span class="id" type="variable">offset</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Logic.html#:type_scope:x_'='_x"><span class="id" type="notation">=</span></a> <a class="idref" href="Fetch.html#Found"><span class="id" type="constructor">Found</span></a> <a class="idref" href="DiskSubset.html#byte"><span class="id" type="variable">byte</span></a>.<br/>
+
+<br/>
+<span class="id" type="keyword">Infix</span> <a name="::x_'⊆'_x"><span class="id" type="notation">"</span></a>⊆" := <a class="idref" href="DiskSubset.html#disk_subset"><span class="id" type="definition">disk_subset</span></a> (<span class="id" type="tactic">at</span> <span class="id" type="keyword">level</span> 50).<br/>
+
+<br/>
+<span class="id" type="keyword">Lemma</span> <a name="subset_fmap_existence"><span class="id" type="lemma">subset_fmap_existence</span></a> :<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">forall</span> (<span class="id" type="var">A</span>: <span class="id" type="keyword">Type</span>) (<span class="id" type="var">sub</span> <span class="id" type="var">super</span>: <a class="idref" href="ByteData.html#Disk"><span class="id" type="definition">Disk</span></a>) (<span class="id" type="var">offset</span>: <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Numbers.BinNums.html#N"><span class="id" type="inductive">N</span></a>) (<span class="id" type="var">fn</span>: <a class="idref" href="Byte.html#Byte"><span class="id" type="definition">Byte</span></a> -&gt; <a class="idref" href="DiskSubset.html#A"><span class="id" type="variable">A</span></a>) (<span class="id" type="var">val</span>: <a class="idref" href="DiskSubset.html#A"><span class="id" type="variable">A</span></a>),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="DiskSubset.html#sub"><span class="id" type="variable">sub</span></a> <a class="idref" href="DiskSubset.html#::x_'⊆'_x"><span class="id" type="notation">⊆</span></a> <a class="idref" href="DiskSubset.html#super"><span class="id" type="variable">super</span></a> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="DiskSubset.html#sub"><span class="id" type="variable">sub</span></a> <a class="idref" href="DiskSubset.html#offset"><span class="id" type="variable">offset</span></a> <a class="idref" href="Fetch.html#::x_'_fmap_'_x"><span class="id" type="notation">_fmap_</span></a> <a class="idref" href="DiskSubset.html#fn"><span class="id" type="variable">fn</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Logic.html#:type_scope:x_'='_x"><span class="id" type="notation">=</span></a> <a class="idref" href="Fetch.html#Found"><span class="id" type="constructor">Found</span></a> <a class="idref" href="DiskSubset.html#val"><span class="id" type="variable">val</span></a> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="DiskSubset.html#super"><span class="id" type="variable">super</span></a> <a class="idref" href="DiskSubset.html#offset"><span class="id" type="variable">offset</span></a> <a class="idref" href="Fetch.html#::x_'_fmap_'_x"><span class="id" type="notation">_fmap_</span></a> <a class="idref" href="DiskSubset.html#fn"><span class="id" type="variable">fn</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Logic.html#:type_scope:x_'='_x"><span class="id" type="notation">=</span></a> <a class="idref" href="Fetch.html#Found"><span class="id" type="constructor">Found</span></a> <a class="idref" href="DiskSubset.html#val"><span class="id" type="variable">val</span></a>.<br/>
+<span class="id" type="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">intros</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">destruct</span> (<span class="id" type="var">sub</span> <span class="id" type="var">offset</span>) <span class="id" type="var">eqn</span>: <span class="id" type="var">Heq</span>; [<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" type="tactic">discriminate</span> <span class="id" type="var">H0</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" type="tactic">discriminate</span> <span class="id" type="var">H0</span>].<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">apply</span> <span class="id" type="var">H</span> <span class="id" type="keyword">in</span> <span class="id" type="var">Heq</span>. <span class="id" type="tactic">rewrite</span> &lt;- <span class="id" type="var">Heq</span> <span class="id" type="keyword">in</span> <span class="id" type="var">H0</span>. <span class="id" type="tactic">assumption</span>.<br/>
+<span class="id" type="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Lemma</span> <a name="subset_fflatmap_existence"><span class="id" type="lemma">subset_fflatmap_existence</span></a> : <br/>
+&nbsp;&nbsp;<span class="id" type="keyword">forall</span> (<span class="id" type="var">A</span>: <span class="id" type="keyword">Type</span>) (<span class="id" type="var">sub</span> <span class="id" type="var">super</span>: <a class="idref" href="ByteData.html#Disk"><span class="id" type="definition">Disk</span></a>) (<span class="id" type="var">offset</span>: <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Numbers.BinNums.html#N"><span class="id" type="inductive">N</span></a>) <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" type="var">fn</span>: <a class="idref" href="Byte.html#Byte"><span class="id" type="definition">Byte</span></a> -&gt; @<a class="idref" href="Fetch.html#Fetch"><span class="id" type="inductive">Fetch</span></a> <a class="idref" href="DiskSubset.html#A"><span class="id" type="variable">A</span></a>) (<span class="id" type="var">val</span>: <a class="idref" href="DiskSubset.html#A"><span class="id" type="variable">A</span></a>),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="DiskSubset.html#sub"><span class="id" type="variable">sub</span></a> <a class="idref" href="DiskSubset.html#::x_'⊆'_x"><span class="id" type="notation">⊆</span></a> <a class="idref" href="DiskSubset.html#super"><span class="id" type="variable">super</span></a> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="DiskSubset.html#sub"><span class="id" type="variable">sub</span></a> <a class="idref" href="DiskSubset.html#offset"><span class="id" type="variable">offset</span></a> <a class="idref" href="Fetch.html#::x_'_fflatmap_'_x"><span class="id" type="notation">_fflatmap_</span></a> <a class="idref" href="DiskSubset.html#fn"><span class="id" type="variable">fn</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Logic.html#:type_scope:x_'='_x"><span class="id" type="notation">=</span></a> <a class="idref" href="Fetch.html#Found"><span class="id" type="constructor">Found</span></a> <a class="idref" href="DiskSubset.html#val"><span class="id" type="variable">val</span></a> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="DiskSubset.html#super"><span class="id" type="variable">super</span></a> <a class="idref" href="DiskSubset.html#offset"><span class="id" type="variable">offset</span></a> <a class="idref" href="Fetch.html#::x_'_fflatmap_'_x"><span class="id" type="notation">_fflatmap_</span></a> <a class="idref" href="DiskSubset.html#fn"><span class="id" type="variable">fn</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Logic.html#:type_scope:x_'='_x"><span class="id" type="notation">=</span></a> <a class="idref" href="Fetch.html#Found"><span class="id" type="constructor">Found</span></a> <a class="idref" href="DiskSubset.html#val"><span class="id" type="variable">val</span></a>.<br/>
+<span class="id" type="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">intros</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">destruct</span> (<span class="id" type="var">sub</span> <span class="id" type="var">offset</span>) <span class="id" type="var">eqn</span>: <span class="id" type="var">Heq</span>; [<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" type="tactic">discriminate</span> <span class="id" type="var">H0</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" type="tactic">discriminate</span> <span class="id" type="var">H0</span>].<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">apply</span> <span class="id" type="var">H</span> <span class="id" type="keyword">in</span> <span class="id" type="var">Heq</span>. <span class="id" type="tactic">rewrite</span> &lt;- <span class="id" type="var">Heq</span> <span class="id" type="keyword">in</span> <span class="id" type="var">H0</span>. <span class="id" type="tactic">assumption</span>.<br/>
+<span class="id" type="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Lemma</span> <a name="subset_shift"><span class="id" type="lemma">subset_shift</span></a>:<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">forall</span> (<span class="id" type="var">amount</span>: <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Numbers.BinNums.html#N"><span class="id" type="inductive">N</span></a>) (<span class="id" type="var">sub</span> <span class="id" type="var">super</span>: <a class="idref" href="ByteData.html#Disk"><span class="id" type="definition">Disk</span></a>),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="DiskSubset.html#sub"><span class="id" type="variable">sub</span></a> <a class="idref" href="DiskSubset.html#::x_'⊆'_x"><span class="id" type="notation">⊆</span></a> <a class="idref" href="DiskSubset.html#super"><span class="id" type="variable">super</span></a> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="DiskSubset.html#::x_'⊆'_x"><span class="id" type="notation">(</span></a><a class="idref" href="ByteData.html#shift"><span class="id" type="definition">shift</span></a> <a class="idref" href="DiskSubset.html#sub"><span class="id" type="variable">sub</span></a> <a class="idref" href="DiskSubset.html#amount"><span class="id" type="variable">amount</span></a><a class="idref" href="DiskSubset.html#::x_'⊆'_x"><span class="id" type="notation">)</span></a> <a class="idref" href="DiskSubset.html#::x_'⊆'_x"><span class="id" type="notation">⊆</span></a> <a class="idref" href="DiskSubset.html#::x_'⊆'_x"><span class="id" type="notation">(</span></a><a class="idref" href="ByteData.html#shift"><span class="id" type="definition">shift</span></a> <a class="idref" href="DiskSubset.html#super"><span class="id" type="variable">super</span></a> <a class="idref" href="DiskSubset.html#amount"><span class="id" type="variable">amount</span></a><a class="idref" href="DiskSubset.html#::x_'⊆'_x"><span class="id" type="notation">)</span></a>.<br/>
+<span class="id" type="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">intros</span> <span class="id" type="var">amount</span> <span class="id" type="var">sub</span> <span class="id" type="var">super</span> <span class="id" type="var">H</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">unfold</span> <a class="idref" href="ByteData.html#shift"><span class="id" type="definition">shift</span></a>. <span class="id" type="tactic">unfold</span> <a class="idref" href="DiskSubset.html#disk_subset"><span class="id" type="definition">disk_subset</span></a>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">intros</span> <span class="id" type="var">offset</span> <span class="id" type="var">byte</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">apply</span> <span class="id" type="var">H</span>.<br/>
+<span class="id" type="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Lemma</span> <a name="subset_shift_found"><span class="id" type="lemma">subset_shift_found</span></a>:<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">forall</span> (<span class="id" type="var">amount</span> <span class="id" type="var">offset</span>: <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Numbers.BinNums.html#N"><span class="id" type="inductive">N</span></a>) (<span class="id" type="var">sub</span> <span class="id" type="var">super</span>: <a class="idref" href="ByteData.html#Disk"><span class="id" type="definition">Disk</span></a>) (<span class="id" type="var">val</span>: <a class="idref" href="Byte.html#Byte"><span class="id" type="definition">Byte</span></a>),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="DiskSubset.html#sub"><span class="id" type="variable">sub</span></a> <a class="idref" href="DiskSubset.html#::x_'⊆'_x"><span class="id" type="notation">⊆</span></a> <a class="idref" href="DiskSubset.html#super"><span class="id" type="variable">super</span></a> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<a class="idref" href="ByteData.html#shift"><span class="id" type="definition">shift</span></a> <a class="idref" href="DiskSubset.html#sub"><span class="id" type="variable">sub</span></a> <a class="idref" href="DiskSubset.html#amount"><span class="id" type="variable">amount</span></a>) <a class="idref" href="DiskSubset.html#offset"><span class="id" type="variable">offset</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Logic.html#:type_scope:x_'='_x"><span class="id" type="notation">=</span></a> <a class="idref" href="Fetch.html#Found"><span class="id" type="constructor">Found</span></a> <a class="idref" href="DiskSubset.html#val"><span class="id" type="variable">val</span></a> -&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<a class="idref" href="ByteData.html#shift"><span class="id" type="definition">shift</span></a> <a class="idref" href="DiskSubset.html#super"><span class="id" type="variable">super</span></a> <a class="idref" href="DiskSubset.html#amount"><span class="id" type="variable">amount</span></a>) <a class="idref" href="DiskSubset.html#offset"><span class="id" type="variable">offset</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Logic.html#:type_scope:x_'='_x"><span class="id" type="notation">=</span></a> <a class="idref" href="Fetch.html#Found"><span class="id" type="constructor">Found</span></a> <a class="idref" href="DiskSubset.html#val"><span class="id" type="variable">val</span></a>.<br/>
+<span class="id" type="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">intros</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">apply</span> <a class="idref" href="DiskSubset.html#subset_shift"><span class="id" type="lemma">subset_shift</span></a> <span class="id" type="keyword">with</span> (<span class="id" type="var">super</span> := <span class="id" type="var">super</span>) <span class="id" type="keyword">in</span> <span class="id" type="var">H0</span>; <span class="id" type="tactic">assumption</span>.<br/>
+<span class="id" type="keyword">Qed</span>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

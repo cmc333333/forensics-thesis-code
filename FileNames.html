@@ -1,0 +1,92 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+<link href="coqdoc.css" rel="stylesheet" type="text/css"/>
+<title>FileNames</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library FileNames</h1>
+
+<div class="code">
+<span class="id" type="keyword">Require</span> <span class="id" type="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Lists.List.html#"><span class="id" type="library">Coq.Lists.List</span></a>.<br/>
+<span class="id" type="keyword">Require</span> <span class="id" type="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Strings.Ascii.html#"><span class="id" type="library">Coq.Strings.Ascii</span></a>.<br/>
+<span class="id" type="keyword">Require</span> <span class="id" type="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Strings.String.html#"><span class="id" type="library">Coq.Strings.String</span></a>.<br/>
+<span class="id" type="keyword">Require</span> <span class="id" type="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.ZArith.ZArith.html#"><span class="id" type="library">Coq.ZArith.ZArith</span></a>.<br/>
+
+<br/>
+<span class="id" type="keyword">Require</span> <span class="id" type="keyword">Import</span> <a class="idref" href="ByteData.html#"><span class="id" type="library">ByteData</span></a>.<br/>
+<span class="id" type="keyword">Require</span> <span class="id" type="keyword">Import</span> <a class="idref" href="StringOps.html#"><span class="id" type="library">StringOps</span></a>.<br/>
+<span class="id" type="keyword">Require</span> <span class="id" type="keyword">Import</span> <a class="idref" href="Util.html#"><span class="id" type="library">Util</span></a>.<br/>
+
+<br/>
+<span class="id" type="keyword">Open</span> <span class="id" type="keyword">Local</span> <span class="id" type="keyword">Scope</span> <span class="id" type="var">Z</span>.<br/>
+<span class="id" type="keyword">Open</span> <span class="id" type="keyword">Local</span> <span class="id" type="keyword">Scope</span> <span class="id" type="var">char</span>.<br/>
+<span class="id" type="keyword">Open</span> <span class="id" type="keyword">Local</span> <span class="id" type="keyword">Scope</span> <span class="id" type="var">string</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Definition</span> <a name="trimFileNamePrefix"><span class="id" type="definition">trimFileNamePrefix</span></a> (<span class="id" type="var">fileName</span>: <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Strings.String.html#string"><span class="id" type="inductive">string</span></a>): <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Strings.String.html#string"><span class="id" type="inductive">string</span></a> :=<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">let</span> <span class="id" type="var">reversedName</span> := <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Lists.List.html#rev"><span class="id" type="definition">rev</span></a> <a class="idref" href="FileNames.html#fileName"><span class="id" type="variable">fileName</span></a> <span class="id" type="keyword">in</span><br/>
+&nbsp;&nbsp;<a class="idref" href="StringOps.html#list2string"><span class="id" type="definition">list2string</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Lists.List.html#rev"><span class="id" type="definition">rev</span></a> (<a class="idref" href="Util.html#takeWhile"><span class="id" type="definition">takeWhile</span></a> (<span class="id" type="keyword">fun</span> (<span class="id" type="var">char</span>: <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Strings.Ascii.html#ascii"><span class="id" type="inductive">ascii</span></a>) =&gt; <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#negb"><span class="id" type="definition">negb</span></a> (<a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#orb"><span class="id" type="definition">orb</span></a> (<a class="idref" href="StringOps.html#ascii_eqb"><span class="id" type="definition">ascii_eqb</span></a> <a class="idref" href="FileNames.html#char"><span class="id" type="variable">char</span></a> "/")<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<a class="idref" href="StringOps.html#ascii_eqb"><span class="id" type="definition">ascii_eqb</span></a> <a class="idref" href="FileNames.html#char"><span class="id" type="variable">char</span></a> "\"))))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="FileNames.html#reversedName"><span class="id" type="variable">reversedName</span></a>)).<br/>
+
+<br/>
+<span class="id" type="keyword">Definition</span> <a name="systemFile"><span class="id" type="definition">systemFile</span></a> (<span class="id" type="var">fileName</span>: <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Strings.String.html#string"><span class="id" type="inductive">string</span></a>) :=<br/>
+&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Lists.List.html#In"><span class="id" type="definition">In</span></a> (<a class="idref" href="FileNames.html#trimFileNamePrefix"><span class="id" type="definition">trimFileNamePrefix</span></a> <a class="idref" href="FileNames.html#fileName"><span class="id" type="variable">fileName</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;("ps" <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#:list_scope:x_'::'_x"><span class="id" type="notation">::</span></a> "netstat" <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#:list_scope:x_'::'_x"><span class="id" type="notation">::</span></a> "top" <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#:list_scope:x_'::'_x"><span class="id" type="notation">::</span></a> "ifconfig" <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#:list_scope:x_'::'_x"><span class="id" type="notation">::</span></a> "ssh" <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#:list_scope:x_'::'_x"><span class="id" type="notation">::</span></a> "rsync" <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#:list_scope:x_'::'_x"><span class="id" type="notation">::</span></a> "ProcMon.exe" <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#:list_scope:x_'::'_x"><span class="id" type="notation">::</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#nil"><span class="id" type="constructor">nil</span></a>).<br/>
+
+<br/>
+<span class="id" type="keyword">Definition</span> <a name="systemFile_compute"><span class="id" type="definition">systemFile_compute</span></a> (<span class="id" type="var">fileName</span>: <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Strings.String.html#string"><span class="id" type="inductive">string</span></a>) :=<br/>
+&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Lists.List.html#existsb"><span class="id" type="definition">existsb</span></a> (<a class="idref" href="StringOps.html#string_eqb"><span class="id" type="definition">string_eqb</span></a> (<a class="idref" href="FileNames.html#trimFileNamePrefix"><span class="id" type="definition">trimFileNamePrefix</span></a> <a class="idref" href="FileNames.html#fileName"><span class="id" type="variable">fileName</span></a>))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;("ps" <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#:list_scope:x_'::'_x"><span class="id" type="notation">::</span></a> "netstat" <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#:list_scope:x_'::'_x"><span class="id" type="notation">::</span></a> "top" <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#:list_scope:x_'::'_x"><span class="id" type="notation">::</span></a> "ifconfig" <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#:list_scope:x_'::'_x"><span class="id" type="notation">::</span></a> "ssh"<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#:list_scope:x_'::'_x"><span class="id" type="notation">::</span></a> "rsync" <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#:list_scope:x_'::'_x"><span class="id" type="notation">::</span></a> "ProcMon.exe" <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#:list_scope:x_'::'_x"><span class="id" type="notation">::</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#nil"><span class="id" type="constructor">nil</span></a>).<br/>
+
+<br/>
+<span class="id" type="keyword">Lemma</span> <a name="systemFile_reflection"><span class="id" type="lemma">systemFile_reflection</span></a> (<span class="id" type="var">fileName</span>: <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Strings.String.html#string"><span class="id" type="inductive">string</span></a>) :<br/>
+&nbsp;&nbsp;<a class="idref" href="FileNames.html#systemFile_compute"><span class="id" type="definition">systemFile_compute</span></a> <a class="idref" href="FileNames.html#fileName"><span class="id" type="variable">fileName</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Logic.html#:type_scope:x_'='_x"><span class="id" type="notation">=</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#true"><span class="id" type="constructor">true</span></a> -&gt; <a class="idref" href="FileNames.html#systemFile"><span class="id" type="definition">systemFile</span></a> <a class="idref" href="FileNames.html#fileName"><span class="id" type="variable">fileName</span></a>.<br/>
+<span class="id" type="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">intros</span>. <span class="id" type="tactic">unfold</span> <a class="idref" href="FileNames.html#systemFile_compute"><span class="id" type="definition">systemFile_compute</span></a> <span class="id" type="keyword">in</span> <span class="id" type="var">H</span>. <span class="id" type="tactic">unfold</span> <a class="idref" href="FileNames.html#systemFile"><span class="id" type="definition">systemFile</span></a>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">apply</span> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Lists.List.html#existsb_exists"><span class="id" type="lemma">existsb_exists</span></a> <span class="id" type="keyword">in</span> <span class="id" type="var">H</span>. <span class="id" type="tactic">destruct</span> <span class="id" type="var">H</span>. <span class="id" type="tactic">destruct</span> <span class="id" type="var">H</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">apply</span> <a class="idref" href="StringOps.html#string_eqb_reflection"><span class="id" type="lemma">string_eqb_reflection</span></a> <span class="id" type="keyword">in</span> <span class="id" type="var">H0</span>. <span class="id" type="tactic">rewrite</span> <span class="id" type="var">H0</span>. <span class="id" type="tactic">auto</span>.<br/>
+<span class="id" type="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Lemma</span> <a name="systemFile_ex1"><span class="id" type="lemma">systemFile_ex1</span></a> : <br/>
+&nbsp;&nbsp;<a class="idref" href="FileNames.html#systemFile"><span class="id" type="definition">systemFile</span></a> "last/top".<br/>
+<span class="id" type="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">compute</span>. <span class="id" type="tactic">right</span>. <span class="id" type="tactic">right</span>. <span class="id" type="tactic">left</span>. <span class="id" type="tactic">reflexivity</span>.<br/>
+<span class="id" type="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Lemma</span> <a name="systemFile_ex2"><span class="id" type="lemma">systemFile_ex2</span></a> : <br/>
+&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Logic.html#:type_scope:'~'_x"><span class="id" type="notation">~(</span></a><a class="idref" href="FileNames.html#systemFile"><span class="id" type="definition">systemFile</span></a> "last/example.txt"<a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Logic.html#:type_scope:'~'_x"><span class="id" type="notation">)</span></a>.<br/>
+<span class="id" type="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">compute</span>. <span class="id" type="tactic">intro</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">repeat</span> (<span class="id" type="tactic">destruct</span> <span class="id" type="var">H</span>; [ <span class="id" type="tactic">inversion</span> <span class="id" type="var">H</span> | ]).<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">apply</span> <span class="id" type="var">H</span>.<br/>
+<span class="id" type="keyword">Qed</span>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

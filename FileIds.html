@@ -1,0 +1,71 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+<link href="coqdoc.css" rel="stylesheet" type="text/css"/>
+<title>FileIds</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library FileIds</h1>
+
+<div class="code">
+<span class="id" type="keyword">Require</span> <span class="id" type="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Lists.List.html#"><span class="id" type="library">Coq.Lists.List</span></a>.<br/>
+<span class="id" type="keyword">Require</span> <span class="id" type="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.ZArith.ZArith.html#"><span class="id" type="library">Coq.ZArith.ZArith</span></a>.<br/>
+
+<br/>
+<span class="id" type="keyword">Require</span> <span class="id" type="keyword">Import</span> <a class="idref" href="Byte.html#"><span class="id" type="library">Byte</span></a>.<br/>
+<span class="id" type="keyword">Require</span> <span class="id" type="keyword">Import</span> <a class="idref" href="ByteData.html#"><span class="id" type="library">ByteData</span></a>.<br/>
+<span class="id" type="keyword">Require</span> <span class="id" type="keyword">Import</span> <a class="idref" href="Util.html#"><span class="id" type="library">Util</span></a>.<br/>
+
+<br/>
+<span class="id" type="keyword">Local</span>&nbsp;<span class="id" type="keyword">Open</span> <span class="id" type="keyword">Scope</span> <span class="id" type="var">bool</span>.<br/>
+<span class="id" type="keyword">Local</span>&nbsp;<span class="id" type="keyword">Open</span> <span class="id" type="keyword">Scope</span> <span class="id" type="var">N</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Inductive</span> <a name="FileId"><span class="id" type="inductive">FileId</span></a>: <span class="id" type="keyword">Type</span> :=<br/>
+&nbsp;&nbsp;| <a name="Ext2Id"><span class="id" type="constructor">Ext2Id</span></a>: <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Numbers.BinNums.html#N"><span class="id" type="inductive">N</span></a> -&gt; <a class="idref" href="FileIds.html#FileId"><span class="id" type="inductive">FileId</span></a><br/>
+&nbsp;&nbsp;| <a name="MockId"><span class="id" type="constructor">MockId</span></a>: <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#list"><span class="id" type="inductive">list</span></a> (<a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Numbers.BinNums.html#N"><span class="id" type="inductive">N</span></a><a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#:type_scope:x_'*'_x"><span class="id" type="notation">*</span></a><a class="idref" href="Byte.html#Byte"><span class="id" type="definition">Byte</span></a>) -&gt; <a class="idref" href="FileIds.html#FileId"><span class="id" type="inductive">FileId</span></a><br/>
+.<br/>
+
+<br/>
+<span class="id" type="keyword">Fixpoint</span> <a name="eqb"><span class="id" type="definition">eqb</span></a> (<span class="id" type="var">lhs</span> <span class="id" type="var">rhs</span>: <a class="idref" href="FileIds.html#FileId"><span class="id" type="inductive">FileId</span></a>) :=<br/>
+&nbsp;&nbsp;<span class="id" type="keyword">match</span> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#:core_scope:'('_x_','_x_','_'..'_','_x_')'"><span class="id" type="notation">(</span></a><a class="idref" href="FileIds.html#lhs"><span class="id" type="variable">lhs</span></a><a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#:core_scope:'('_x_','_x_','_'..'_','_x_')'"><span class="id" type="notation">,</span></a> <a class="idref" href="FileIds.html#rhs"><span class="id" type="variable">rhs</span></a><a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#:core_scope:'('_x_','_x_','_'..'_','_x_')'"><span class="id" type="notation">)</span></a> <span class="id" type="keyword">with</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#:core_scope:'('_x_','_x_','_'..'_','_x_')'"><span class="id" type="notation">((</span></a><a class="idref" href="FileIds.html#Ext2Id"><span class="id" type="constructor">Ext2Id</span></a> <span class="id" type="var">l</span><a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#:core_scope:'('_x_','_x_','_'..'_','_x_')'"><span class="id" type="notation">),</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#:core_scope:'('_x_','_x_','_'..'_','_x_')'"><span class="id" type="notation">(</span></a><a class="idref" href="FileIds.html#Ext2Id"><span class="id" type="constructor">Ext2Id</span></a> <span class="id" type="var">r</span><a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#:core_scope:'('_x_','_x_','_'..'_','_x_')'"><span class="id" type="notation">))</span></a> =&gt; <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.NArith.BinNat.html#N.eqb"><span class="id" type="definition">N.eqb</span></a> <span class="id" type="var">l</span> <span class="id" type="var">r</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#:core_scope:'('_x_','_x_','_'..'_','_x_')'"><span class="id" type="notation">((</span></a><a class="idref" href="FileIds.html#MockId"><span class="id" type="constructor">MockId</span></a> <span class="id" type="var">l</span><a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#:core_scope:'('_x_','_x_','_'..'_','_x_')'"><span class="id" type="notation">),</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#:core_scope:'('_x_','_x_','_'..'_','_x_')'"><span class="id" type="notation">(</span></a><a class="idref" href="FileIds.html#MockId"><span class="id" type="constructor">MockId</span></a> <span class="id" type="var">r</span><a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#:core_scope:'('_x_','_x_','_'..'_','_x_')'"><span class="id" type="notation">))</span></a> =&gt; <a class="idref" href="Util.html#listN_Byte_eqb"><span class="id" type="definition">listN_Byte_eqb</span></a> <span class="id" type="var">l</span> <span class="id" type="var">r</span><br/>
+&nbsp;&nbsp;| <span class="id" type="var">_</span> =&gt; <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#false"><span class="id" type="constructor">false</span></a><br/>
+&nbsp;&nbsp;<span class="id" type="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" type="keyword">Lemma</span> <a name="eqb_reflection"><span class="id" type="lemma">eqb_reflection</span></a> (<span class="id" type="var">lhs</span> <span class="id" type="var">rhs</span>: <a class="idref" href="FileIds.html#FileId"><span class="id" type="inductive">FileId</span></a>) :<br/>
+&nbsp;&nbsp;<a class="idref" href="FileIds.html#eqb"><span class="id" type="definition">eqb</span></a> <a class="idref" href="FileIds.html#lhs"><span class="id" type="variable">lhs</span></a> <a class="idref" href="FileIds.html#rhs"><span class="id" type="variable">rhs</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Logic.html#:type_scope:x_'='_x"><span class="id" type="notation">=</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Datatypes.html#true"><span class="id" type="constructor">true</span></a> -&gt; <a class="idref" href="FileIds.html#lhs"><span class="id" type="variable">lhs</span></a> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.Init.Logic.html#:type_scope:x_'='_x"><span class="id" type="notation">=</span></a> <a class="idref" href="FileIds.html#rhs"><span class="id" type="variable">rhs</span></a>.<br/>
+<span class="id" type="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">generalize</span> <span class="id" type="var">rhs</span>.<br/>
+&nbsp;&nbsp;<span class="id" type="tactic">induction</span> <span class="id" type="var">lhs</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="tactic">destruct</span> <span class="id" type="var">rhs0</span>; [| <span class="id" type="tactic">simpl</span>; <span class="id" type="tactic">intros</span>; <span class="id" type="tactic">inversion</span> <span class="id" type="var">H</span>].<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="tactic">unfold</span> <a class="idref" href="FileIds.html#eqb"><span class="id" type="definition">eqb</span></a>. <span class="id" type="tactic">intros</span>. <span class="id" type="tactic">apply</span> <a class="idref" href="http://coq.inria.fr/distrib/8.4pl2/stdlib/Coq.NArith.BinNat.html#N.eqb_eq"><span class="id" type="lemma">N.eqb_eq</span></a> <span class="id" type="keyword">in</span> <span class="id" type="var">H</span>. <span class="id" type="tactic">rewrite</span> <span class="id" type="var">H</span>. <span class="id" type="tactic">reflexivity</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="tactic">destruct</span> <span class="id" type="var">rhs0</span>; [<span class="id" type="tactic">simpl</span>; <span class="id" type="tactic">intros</span>; <span class="id" type="tactic">inversion</span> <span class="id" type="var">H</span> | ].<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="tactic">intros</span>. <span class="id" type="tactic">unfold</span> <a class="idref" href="FileIds.html#eqb"><span class="id" type="definition">eqb</span></a> <span class="id" type="keyword">in</span> <span class="id" type="var">H</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="tactic">apply</span> <a class="idref" href="Util.html#listN_Byte_eqb_reflection"><span class="id" type="lemma">listN_Byte_eqb_reflection</span></a> <span class="id" type="keyword">in</span> <span class="id" type="var">H</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" type="tactic">rewrite</span> <span class="id" type="var">H</span>. <span class="id" type="tactic">reflexivity</span>.<br/>
+<span class="id" type="keyword">Qed</span>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>
