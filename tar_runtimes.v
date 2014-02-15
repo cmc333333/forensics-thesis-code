@@ -32,26 +32,24 @@ Fixpoint create (level:nat) : Map_N_Byte :=
   end.
 
 Definition f_of (level:nat) := 
-    mkFile (FileIds.MockId (Disk_of_Map_N_Byte (create level)))
-           (512 * (N.of_nat level)) false None None None None.
+  mkFile (FileIds.MockId (MN.elements (create level)))
+         (512 * (N.of_nat level)) false None None None None.
 
 Definition disk (n:N): @Fetch Byte := MissingAt n.
 
 Open Scope nat.
 Open Scope string.
 Definition f1: File := f_of 1.
-Compute (last (parseFileNames f1 disk) "tst").
+Compute ((parseFileNames f1 disk) _fmap_ (fun lst => (last lst "tst"))).
 Definition f5: File := f_of 5.
-Compute (last (parseFileNames f5 disk) "tst").
+Compute ((parseFileNames f5 disk) _fmap_ (fun lst => (last lst "tst"))).
 Definition f10: File := f_of 10.
-Compute (last (parseFileNames f10 disk) "tst").
+Compute ((parseFileNames f10 disk) _fmap_ (fun lst => (last lst "tst"))).
 Definition f50: File := f_of 50.
-Compute (last (parseFileNames f50 disk) "tst").
+Compute ((parseFileNames f50 disk) _fmap_ (fun lst => (last lst "tst"))).
 Definition f100: File := f_of 100.
-Compute (last (parseFileNames f100 disk) "tst").
+Compute ((parseFileNames f100 disk) _fmap_ (fun lst => (last lst "tst"))).
 Definition f500: File := f_of 500.
-Compute (last (parseFileNames f500 disk) "tst").
+Compute ((parseFileNames f500 disk) _fmap_ (fun lst => (last lst "tst"))).
 Definition f1000: File := f_of 1000.
-Compute (last (parseFileNames f1000 disk) "tst").
-Definition f5000: File := f_of 5000.
-Compute (last (parseFileNames f5000 disk) "tst").
+Compute ((parseFileNames f1000 disk) _fmap_ (fun lst => (last lst "tst"))).
