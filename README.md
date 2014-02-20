@@ -1,5 +1,4 @@
-This is a work in progress formalization of a honeynet challenge
-(http://old.honeynet.org/scans/scan15/).
+This is a formalization of a honeynet challenge (http://old.honeynet.org/scans/scan15/).
 
 It includes two proofs (in honeynet.v):
 
@@ -11,5 +10,5 @@ It includes two proofs (in honeynet.v):
 
 To execute, run the make file, then step through honeynet.v with Coq.
 
-For more details see formalized-forensics.pdf, an in-progress paper written to
-accompany this code.
+For more details see formalized-forensics.pdf, a paper written to accompany
+this code.
